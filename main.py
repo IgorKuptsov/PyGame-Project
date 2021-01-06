@@ -3,7 +3,7 @@ from pygame.locals import *
 import os
 
 FPS = 60
-PLAYER_SIZE = 32
+PLAYER_SIZE = 75
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
 g = 2
 thickness = 2
@@ -27,26 +27,6 @@ def window_init():
     screen = pg.display.set_mode(WIN_SIZE.size)
 
     return screen
-
-
-# def load_image(name, color_key=None, bg=False):
-#     fullname = os.path.join('data', name)
-#     try:
-#         image = pg.image.load(fullname).convert()
-#     except pg.error as message:
-#         # print('Cannot load image:', name)
-#         raise SystemExit(message)
-#     if color_key is not None:
-#         if color_key == -1:
-#             color_key = image.get_at((0, 0))
-#         image.set_colorkey(color_key)
-#     else:
-#         image = image.convert_alpha()
-#     if bg:
-#         image = pg.transform.scale(image, WIN_SIZE.size)
-#     else:
-#         image = pg.transform.scale(image, (TILE_SIZE, TILE_SIZE))
-#     return image
 
 
 def load_image(name, color_key=None, size='bg'):
@@ -97,10 +77,6 @@ class Game:
                thickness, WIN_SIZE.height)
         Border(WIN_SIZE.width - thickness, 0,
                thickness, WIN_SIZE.height)
-        #
-        # Player.hard_blocks = self.borders_vert
-        #
-        # self.screen = pg.display.set_mode(WIN_SIZE.size)
         self.clock = pg.time.Clock()
 
     def run(self):
@@ -123,7 +99,6 @@ class Game:
         self.clock.tick_busy_loop(FPS)
 
     def render(self):
-        # self.screen.fill(self.BG_COLOR)
         self.screen.blit(self.screen_bg, (0, 0))
         self.all_sprites.draw(self.screen)
         self.player.draw(self.screen)
@@ -133,11 +108,8 @@ class Game:
         pg.quit()
 
 
-class Player(pg.sprite.Sprite):
-    player = None
-
-    # hard_blocks = None
-    def __init__(self, img='player_test', x=5, y=WIN_SIZE.height - PLAYER_SIZE):
+class AnimatedSprite(pg.sprite.Sprite):
+    def __init__(self, sheet, columns=7, rows=4, x=thickness, y=thickness):
         super().__init__()
         self.idle_frames = []
         self.run_frames = []
@@ -148,13 +120,23 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect().move(x, y)
         # self.rect = self.image.get_rect().move(0, 0)
 
+class Player(AnimatedSprite):
+    player = None
+
+    # hard_blocks = None
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
         self.add(Player.player)
-        self.speed = 5
+        self.speed = 7
         self.is_jumping = False
         # self.y = 5
-        self.jump_frames = 15
+        self.jumping_frames = 15
+        self.counter = 0
 
-    def update(self):
+    def update(self, *args):
+        state = 'idle'
         speed_y = 0
         # defining keys
         keys = pg.key.get_pressed()
@@ -166,8 +148,10 @@ class Player(pg.sprite.Sprite):
             speed_x = 0
         elif left:
             speed_x = -self.speed
+            state = 'run'
         else:
             speed_x = self.speed
+            state = 'run'
         self.rect.x += speed_x
         # y speed
         if self.is_jumping:
@@ -178,23 +162,30 @@ class Player(pg.sprite.Sprite):
         # TODO: в условие ниже добавить столкновение с платформами
         #  (or pg.sprite.spritecollideany(self, Platform.platforms))
         if pg.sprite.spritecollideany(self, Border.borders_hor):
+
             self.is_jumping = False
             if space:
                 self.is_jumping = True
-                self.count = self.jump_frames
+                self.count = self.jumping_frames
+                state = 'jump'
         else:
+            state = 'jump'
             speed_y += g
         self.rect.y += speed_y
         # Colliding with vertical borders
-        if self.rect.x < 0:
+        if self.rect.x < thickness:
             self.rect.x = thickness
-        elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width:
+        elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width - thickness:
             self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
         # Colliding with horizontal borders
         if self.rect.y + PLAYER_SIZE > WIN_SIZE.height:
             self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
-        elif self.rect.y < 0:
+        elif self.rect.y < thickness:
             self.rect.y = thickness
+
+        self.counter += 1
+        if self.counter % 5 == 0:
+            super().update(state)
 
 
 class Border(pg.sprite.Sprite):
@@ -204,7 +195,6 @@ class Border(pg.sprite.Sprite):
 
     def __init__(self, x, y, w, h):
         super().__init__()
-        # print(w, h)
         self.image = pg.Surface((w, h))
         self.rect = self.image.get_rect().move(x, y)
         self.add(Border.all_sprites)
