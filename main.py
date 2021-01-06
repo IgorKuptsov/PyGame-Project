@@ -4,6 +4,8 @@ import os
 
 FPS = 60
 PLAYER_SIZE = 75
+PLATFORM_THICKNESS = 10
+LADDER_WIDTH = 30
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
 g = 2
 thickness = 2
@@ -79,8 +81,13 @@ class Game:
         self.platforms = pg.sprite.Group()
         Platform.platforms = self.platforms
         Platform.all_sprites = self.all_sprites
-        Platform(350, 420, 100)
+        Platform(350, 300, 100)
         Platform(150, 370, 100)
+
+        self.ladders = pg.sprite.Group()
+        Ladder.ladders = self.ladders
+        Ladder.all_sprites = self.all_sprites
+        Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
 
     def run(self):
         while self.is_running:
@@ -161,49 +168,71 @@ class Player(AnimatedSprite):
         self.add(Player.player)
         self.speed = 7
         self.is_jumping = False
+        self.is_climbing = False, None
         # self.y = 5
         self.jumping_frames = 15
         self.counter = 0
 
     def update(self, *args):
-        sprites = pg.sprite.spritecollide(self, Platform.platforms, False)
-        standing = False
-        for sprite in sprites:
-            if sprite.rect.y <= self.rect.y + PLAYER_SIZE <= sprite.rect.y + 10 and not self.is_jumping:
-                # print(1)
-                standing = True
         state = 'idle'
         speed_y = 0
+        speed_x = 0
+        # Colliding with platforms
+        sprites = pg.sprite.spritecollide(self, Platform.platforms, False)
+        standing_on_platform = False
+        for sprite in sprites:
+            if sprite.rect.y <= self.rect.y + PLAYER_SIZE <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping:
+                # print(1)
+                standing_on_platform = True
+        # Colliding with ladders
+        sprites = pg.sprite.spritecollide(self, Ladder.ladders, False)
+        for sprite in sprites:
+            if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.x + LADDER_WIDTH:
+                self.is_climbing = True, sprite
+        if self.is_climbing[0]:
+            if self.rect.y + PLAYER_SIZE <= self.is_climbing[1].rect.y:
+                self.rect.x = self.is_climbing[1].rect.x - PLAYER_SIZE
+                self.is_climbing = False, None
         # defining keys
         keys = pg.key.get_pressed()
         left = keys[K_a] or keys[K_LEFT]
         right = keys[K_d] or keys[K_RIGHT]
+        up = keys[K_w] or keys[K_UP]
+        down = keys[K_s] or keys[K_DOWN]
         space = keys[K_SPACE]
         # x speed
         if left == right:
             speed_x = 0
-        elif left:
+        elif self.is_climbing[0] and left:
+            speed_x = -self.speed
+            self.is_climbing = False, None
+        elif not self.is_climbing[0] and left:
             speed_x = -self.speed
             state = 'run'
-        else:
+        elif not self.is_climbing[0] and right:
             speed_x = self.speed
             state = 'run'
         self.rect.x += speed_x
         # y speed
+        if self.is_climbing[0]:
+            if up and down:
+                speed_y = 0
+            elif up:
+                speed_y = -self.speed
+            elif down:
+                speed_y = self.speed
         if self.is_jumping:
-            self.count -= 1
             speed_y -= self.count
+            self.count -= 1
             if not self.count:
                 self.is_jumping = False
-        # TODO: в условие ниже добавить столкновение с платформами
-        #  (or pg.sprite.spritecollideany(self, Platform.platforms))
-        if pg.sprite.spritecollideany(self, Border.borders_hor) or standing:
+        if pg.sprite.spritecollideany(self, Border.borders_hor) or standing_on_platform:
             self.is_jumping = False
-            if space:
+            if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
                 state = 'jump'
-        else:
+        elif not self.is_climbing[0]:
             state = 'jump'
             speed_y += g
         self.rect.y += speed_y
@@ -223,12 +252,24 @@ class Platform(pg.sprite.Sprite):
     all_sprites = None
     platforms = None
 
-    def __init__(self, x, y, w, h=10):
+    def __init__(self, x, y, w, h=PLATFORM_THICKNESS):
         super().__init__()
         self.image = load_image('platform.png', -1, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
         self.add(self.platforms)
+
+
+class Ladder(pg.sprite.Sprite):
+    all_sprites = None
+    ladders = None
+
+    def __init__(self, x, y, w, h):
+        super().__init__()
+        self.image = load_image('ladder.png', None, w, h)
+        self.rect = self.image.get_rect().move(x, y)
+        self.add(self.all_sprites)
+        self.add(self.ladders)
 
 
 class Border(pg.sprite.Sprite):
