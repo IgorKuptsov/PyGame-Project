@@ -2,10 +2,11 @@ import pygame as pg
 from pygame.locals import *
 import os
 
-FPS = 60
+FPS = 10
 PLAYER_SIZE = 32
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
-g = 2
+GAP = 0
+g = 10
 thickness = 2
 
 
@@ -81,7 +82,7 @@ class Game:
         # Creating the player
         self.player = pg.sprite.Group()
         Player.player = self.player
-        Player()
+        Player(load_image('animated_player_test.png', -1))
         # Creating the borders
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
@@ -89,14 +90,14 @@ class Game:
         Border.all_sprites = self.all_sprites
         Border.borders_hor = self.borders_hor
         Border.borders_vert = self.borders_vert
-        Border(0, 0,
-               WIN_SIZE.width, thickness)
-        Border(0, WIN_SIZE.height - thickness,
-               WIN_SIZE.width, thickness)
-        Border(0, 0,
-               thickness, WIN_SIZE.height)
-        Border(WIN_SIZE.width - thickness, 0,
-               thickness, WIN_SIZE.height)
+        Border(GAP, GAP,
+               WIN_SIZE.width - GAP * 2, thickness)
+        Border(GAP, WIN_SIZE.height - GAP - thickness,
+               WIN_SIZE.width - GAP * 2, thickness)
+        Border(GAP, GAP,
+               thickness, WIN_SIZE.height - GAP * 2)
+        Border(WIN_SIZE.width - GAP - thickness, GAP,
+               thickness, WIN_SIZE.height - GAP * 2)
         #
         # Player.hard_blocks = self.borders_vert
         #
@@ -133,21 +134,104 @@ class Game:
         pg.quit()
 
 
-class Player(pg.sprite.Sprite):
-    player = None
+# class Player(pg.sprite.Sprite):
+#     player = None
+#
+#     # hard_blocks = None
+#
+#     def __init__(self, img='player_test'):
+#         super().__init__()
+#         self.image = load_image(img, color_key=-1, size='player')
+#         self.rect = self.image.get_rect().move(10, 400)
+#         self.add(Player.player)
+#         self.speed = 5
+#         self.jump_speed = 2
+#         self.is_jumping = False
+#         # self.y = 5
+#         self.jump_frames = 10
+#
+#     def update(self):
+#         speed_y = 0
+#         # defining keys
+#         keys = pg.key.get_pressed()
+#         left = keys[K_a] or keys[K_LEFT]
+#         right = keys[K_d] or keys[K_RIGHT]
+#         space = keys[K_SPACE]
+#         # x speed
+#         if left == right:
+#             speed_x = 0
+#         elif left:
+#             speed_x = -self.speed
+#         else:
+#             speed_x = self.speed
+#         self.rect.x += speed_x
+#         # y speed
+#         if self.is_jumping:
+#             self.count -= 1
+#             # speed_y -= self.count
+#             # speed_y -= self.jump_speed
+#             print(self.jump_speed * self.count)
+#             speed_y -= self.jump_speed * self.count
+#
+#             if not self.count:
+#                 # print(self.count)
+#                 self.is_jumping = False
+#
+#         # TODO: в условие ниже добавить столкновение с платформами
+#         if pg.sprite.spritecollideany(self, Border.borders_hor):
+#             # if self.rect.y > WIN_SIZE.height:
+#             #     self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness# - GAP
+#             # elif self.rect.y < 0:
+#             #     self.rect.y = thickness# + GAP
+#             self.is_jumping = False
+#             if space:
+#                 self.is_jumping = True
+#                 self.count = self.jump_frames
+#         else:
+#             speed_y += g
+#         self.rect.y += speed_y
+#
+#         # Colliding with vertical borders
+#         # if self.rect.x < 0:
+#         #     self.rect.x = thickness# + GAP
+#         # elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width:
+#         #     self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness# - GAP
+#         # Colliding with horizontal borders
+#         # if self.rect.y > WIN_SIZE.height - thickness:
+#         #     self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness  # - GAP
+#         # elif self.rect.y < 0:
+#         #     self.rect.y = thickness  # + GAP
+#
+#         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+#         self.image = self.frames[self.cur_frame]
 
-    # hard_blocks = None
-    def __init__(self, img='player_test', x=5, y=WIN_SIZE.height - PLAYER_SIZE):
+
+class AnimatedSprite(pg.sprite.Sprite):
+    def __init__(self, sheet, columns=7, rows=4, x=thickness, y=thickness):
         super().__init__()
-        self.image = load_image(img, color_key=-1, size='player')
+        self.idle_frames = []
+        self.run_frames = []
+        self.jump_frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.idle_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
         # self.rect = self.image.get_rect().move(0, 0)
 
+class Player(AnimatedSprite):
+    player = None
+
+    # hard_blocks = None
+    def __init__(self, *args, **kwargs):
+        print(1)
+        super().__init__(*args, **kwargs)
+        print(2)
         self.add(Player.player)
         self.speed = 5
+        self.jump_speed = 2
         self.is_jumping = False
         # self.y = 5
-        self.jump_frames = 15
+        self.jump_frames = 10
 
     def update(self):
         speed_y = 0
@@ -167,12 +251,21 @@ class Player(pg.sprite.Sprite):
         # y speed
         if self.is_jumping:
             self.count -= 1
-            speed_y -= self.count
+            # speed_y -= self.count
+            # speed_y -= self.jump_speed
+            print(self.jump_speed * self.count)
+            speed_y -= self.jump_speed * self.count
+
             if not self.count:
+                # print(self.count)
                 self.is_jumping = False
+
         # TODO: в условие ниже добавить столкновение с платформами
-        #  (or pg.sprite.spritecollideany(self, Platform.platforms))
         if pg.sprite.spritecollideany(self, Border.borders_hor):
+            # if self.rect.y > WIN_SIZE.height:
+            #     self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness# - GAP
+            # elif self.rect.y < 0:
+            #     self.rect.y = thickness# + GAP
             self.is_jumping = False
             if space:
                 self.is_jumping = True
@@ -180,16 +273,18 @@ class Player(pg.sprite.Sprite):
         else:
             speed_y += g
         self.rect.y += speed_y
+
         # Colliding with vertical borders
-        if self.rect.x < 0:
-            self.rect.x = thickness
-        elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width:
-            self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
+        # if self.rect.x < 0:
+        #     self.rect.x = thickness# + GAP
+        # elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width:
+        #     self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness# - GAP
         # Colliding with horizontal borders
-        if self.rect.y + PLAYER_SIZE > WIN_SIZE.height:
-            self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
-        elif self.rect.y < 0:
-            self.rect.y = thickness
+        # if self.rect.y > WIN_SIZE.height - thickness:
+        #     self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness  # - GAP
+        # elif self.rect.y < 0:
+        #     self.rect.y = thickness  # + GAP
+        super().update()
 
 
 class Border(pg.sprite.Sprite):
