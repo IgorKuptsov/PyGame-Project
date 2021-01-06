@@ -81,7 +81,7 @@ class Game:
         # Creating the player
         self.player = pg.sprite.Group()
         Player.player = self.player
-        Player()
+        Player(load_image('animated_player_test.png', -1))
         # Creating the borders
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
@@ -139,7 +139,12 @@ class Player(pg.sprite.Sprite):
     # hard_blocks = None
     def __init__(self, img='player_test', x=5, y=WIN_SIZE.height - PLAYER_SIZE):
         super().__init__()
-        self.image = load_image(img, color_key=-1, size='player')
+        self.idle_frames = []
+        self.run_frames = []
+        self.jump_frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.idle_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
         # self.rect = self.image.get_rect().move(0, 0)
 
