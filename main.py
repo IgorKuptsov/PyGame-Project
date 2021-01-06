@@ -29,26 +29,6 @@ def window_init():
     return screen
 
 
-# def load_image(name, color_key=None, bg=False):
-#     fullname = os.path.join('data', name)
-#     try:
-#         image = pg.image.load(fullname).convert()
-#     except pg.error as message:
-#         # print('Cannot load image:', name)
-#         raise SystemExit(message)
-#     if color_key is not None:
-#         if color_key == -1:
-#             color_key = image.get_at((0, 0))
-#         image.set_colorkey(color_key)
-#     else:
-#         image = image.convert_alpha()
-#     if bg:
-#         image = pg.transform.scale(image, WIN_SIZE.size)
-#     else:
-#         image = pg.transform.scale(image, (TILE_SIZE, TILE_SIZE))
-#     return image
-
-
 def load_image(name, color_key=None, size='bg'):
     fullname = os.path.join('data', name)
     try:
@@ -97,10 +77,6 @@ class Game:
                thickness, WIN_SIZE.height)
         Border(WIN_SIZE.width - thickness, 0,
                thickness, WIN_SIZE.height)
-        #
-        # Player.hard_blocks = self.borders_vert
-        #
-        # self.screen = pg.display.set_mode(WIN_SIZE.size)
         self.clock = pg.time.Clock()
 
     def run(self):
@@ -123,7 +99,6 @@ class Game:
         self.clock.tick_busy_loop(FPS)
 
     def render(self):
-        # self.screen.fill(self.BG_COLOR)
         self.screen.blit(self.screen_bg, (0, 0))
         self.all_sprites.draw(self.screen)
         self.player.draw(self.screen)
@@ -220,7 +195,6 @@ class Border(pg.sprite.Sprite):
 
     def __init__(self, x, y, w, h):
         super().__init__()
-        # print(w, h)
         self.image = pg.Surface((w, h))
         self.rect = self.image.get_rect().move(x, y)
         self.add(Border.all_sprites)
