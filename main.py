@@ -29,7 +29,7 @@ def window_init():
     return screen
 
 
-def load_image(name, color_key=None, size='bg'):
+def load_image(name, color_key=None, w=WIN_SIZE.width, h=WIN_SIZE.height):
     fullname = os.path.join('data', name)
     try:
         image = pg.image.load(fullname).convert()
@@ -42,10 +42,7 @@ def load_image(name, color_key=None, size='bg'):
         image.set_colorkey(color_key)
     else:
         image = image.convert_alpha()
-    if size == 'bg':
-        image = pg.transform.scale(image, WIN_SIZE.size)
-    elif size == 'player':
-        image = pg.transform.scale(image, (PLAYER_SIZE, PLAYER_SIZE))
+    image = pg.transform.scale(image, (w, h))
     return image
 
 
@@ -79,6 +76,12 @@ class Game:
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
 
+        self.platforms = pg.sprite.Group()
+        Platform.platforms = self.platforms
+        Platform.all_sprites = self.all_sprites
+        Platform(350, 420, 100)
+        Platform(150, 370, 100)
+
     def run(self):
         while self.is_running:
             self.events()
@@ -109,7 +112,7 @@ class Game:
 
 
 class AnimatedSprite(pg.sprite.Sprite):
-    def __init__(self, sheet, columns=7, rows=4, x=thickness, y=thickness):
+    def __init__(self, sheet, columns=7, rows=4, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
         self.idle_frames = []
         self.run_frames = []
@@ -118,7 +121,34 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.idle_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
-        # self.rect = self.image.get_rect().move(0, 0)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
+                            sheet.get_height() // rows)
+        # idle row = 1, columns = 4
+        for i in range(4):
+            frame_location = (self.rect.w * i, self.rect.h * 1)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.idle_frames.append(frame)
+        # run_frames row = 2, columns = 4
+        for i in range(4):
+            frame_location = (self.rect.w * i, self.rect.h * 2)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.run_frames.append(frame)
+        # jump_frames row = 3, columns = 7
+        for i in range(7):
+            frame_location = (self.rect.w * i, self.rect.h * 3)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.jump_frames.append(frame)
+
+    def update(self, state):
+        frames = getattr(self, f'{state}_frames')
+        self.cur_frame = (self.cur_frame + 1) % len(frames)
+        self.image = frames[self.cur_frame]
+
 
 class Player(AnimatedSprite):
     player = None
@@ -136,6 +166,12 @@ class Player(AnimatedSprite):
         self.counter = 0
 
     def update(self, *args):
+        sprites = pg.sprite.spritecollide(self, Platform.platforms, False)
+        standing = False
+        for sprite in sprites:
+            if sprite.rect.y <= self.rect.y + PLAYER_SIZE <= sprite.rect.y + 10 and not self.is_jumping:
+                # print(1)
+                standing = True
         state = 'idle'
         speed_y = 0
         # defining keys
@@ -161,8 +197,7 @@ class Player(AnimatedSprite):
                 self.is_jumping = False
         # TODO: в условие ниже добавить столкновение с платформами
         #  (or pg.sprite.spritecollideany(self, Platform.platforms))
-        if pg.sprite.spritecollideany(self, Border.borders_hor):
-
+        if pg.sprite.spritecollideany(self, Border.borders_hor) or standing:
             self.is_jumping = False
             if space:
                 self.is_jumping = True
@@ -183,9 +218,17 @@ class Player(AnimatedSprite):
         elif self.rect.y < thickness:
             self.rect.y = thickness
 
-        self.counter += 1
-        if self.counter % 5 == 0:
-            super().update(state)
+
+class Platform(pg.sprite.Sprite):
+    all_sprites = None
+    platforms = None
+
+    def __init__(self, x, y, w, h=10):
+        super().__init__()
+        self.image = load_image('platform.png', -1, w, h)
+        self.rect = self.image.get_rect().move(x, y)
+        self.add(self.all_sprites)
+        self.add(self.platforms)
 
 
 class Border(pg.sprite.Sprite):
