@@ -178,6 +178,7 @@ class Player(AnimatedSprite):
         # self.y = 5
         self.jumping_frames = 15
         self.counter = 0
+        self.count = 0
 
     def update(self, *args):
         state = 'idle'
@@ -188,7 +189,6 @@ class Player(AnimatedSprite):
         standing_on_platform = False
         for sprite in sprites:
             if sprite.rect.y <= self.rect.y + PLAYER_SIZE <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping:
-                # print(1)
                 standing_on_platform = True
         # Colliding with ladders
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False)
@@ -221,8 +221,10 @@ class Player(AnimatedSprite):
             if up and down:
                 speed_y = 0
             # If the player is on the top of the ladder he can not climb up
-            elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) > self.speed:
+            elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) >= self.speed:
                 speed_y = -self.speed
+            elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) < self.speed:
+                speed_y = self.is_climbing[1].rect.y - self.rect.y - PLAYER_SIZE
             elif down:
                 speed_y = self.speed
         if self.is_jumping:
@@ -250,6 +252,10 @@ class Player(AnimatedSprite):
             self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
         elif self.rect.y < thickness:
             self.rect.y = thickness
+
+        self.counter += 1
+        if self.counter % 5 == 0:
+            super().update(state)
 
 
 class Platform(pg.sprite.Sprite):
