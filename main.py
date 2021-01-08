@@ -88,6 +88,7 @@ class Game:
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
         Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
+        Ladder(250, 300, LADDER_WIDTH, 200 - thickness)
 
     def run(self):
         while self.is_running:
@@ -121,6 +122,7 @@ class Game:
 class AnimatedSprite(pg.sprite.Sprite):
     def __init__(self, sheet, columns=7, rows=4, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
+        self.climb_frames = []
         self.idle_frames = []
         self.run_frames = []
         self.jump_frames = []
@@ -132,6 +134,10 @@ class AnimatedSprite(pg.sprite.Sprite):
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
+        # climb row = 0, columns = 1
+        frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
+        frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+        self.climb_frames.append(frame)
         # idle row = 1, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 1)
@@ -187,11 +193,11 @@ class Player(AnimatedSprite):
         # Colliding with ladders
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False)
         for sprite in sprites:
-            if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.x + LADDER_WIDTH:
+            if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
                 self.is_climbing = True, sprite
+                state = 'climb'
         if self.is_climbing[0]:
-            if self.rect.y + PLAYER_SIZE <= self.is_climbing[1].rect.y:
-                self.rect.x = self.is_climbing[1].rect.x - PLAYER_SIZE
+            if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
                 self.is_climbing = False, None
         # defining keys
         keys = pg.key.get_pressed()
@@ -203,13 +209,10 @@ class Player(AnimatedSprite):
         # x speed
         if left == right:
             speed_x = 0
-        elif self.is_climbing[0] and left:
-            speed_x = -self.speed
-            self.is_climbing = False, None
-        elif not self.is_climbing[0] and left:
+        elif left:
             speed_x = -self.speed
             state = 'run'
-        elif not self.is_climbing[0] and right:
+        elif right:
             speed_x = self.speed
             state = 'run'
         self.rect.x += speed_x
@@ -217,7 +220,8 @@ class Player(AnimatedSprite):
         if self.is_climbing[0]:
             if up and down:
                 speed_y = 0
-            elif up:
+            # If the player is on the top of the ladder he can not climb up
+            elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) > self.speed:
                 speed_y = -self.speed
             elif down:
                 speed_y = self.speed
