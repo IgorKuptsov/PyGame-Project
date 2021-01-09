@@ -197,8 +197,6 @@ class Player(AnimatedSprite):
         self.count = 0
 
     def update(self, *args):
-
-        # print(self.is_climbing)
         # defining keys
         keys = pg.key.get_pressed()
         left = keys[K_a] or keys[K_LEFT]
@@ -215,20 +213,15 @@ class Player(AnimatedSprite):
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
-            # print(sprite.rect.y)
-            # print(self.rect.right, sprite.rect.x, sprite.rect.left)
-            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping and not \
-            self.is_climbing[0]:
+            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping and not self.is_climbing[0]:
                 standing_on_platform = True
                 self.rect.bottom = sprite.rect.top
-            elif right and sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:  # and not self.is_climbing[0]:#  and self.rect(self.rect.top, self.rect.bottom):
+            elif right and sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
                 directions['right'] = False
-                # if self.is_climbing[1]:
-                #     self.rect.right = sprite.rect.left
             elif left and sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
                 directions['left'] = False
-                # if self.is_climbing[1]:
-                #     self.rect.left = sprite.rect.right
+            if sprite.rect.top <= self.rect.top <= sprite.rect.bottom and self.is_jumping:
+                self.rect.top = sprite.rect.bottom
 
         # Colliding with ladders
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
@@ -263,13 +256,7 @@ class Player(AnimatedSprite):
                 state = 'jump'
         elif not self.is_climbing[0]:
             state = 'jump'
-            # print(1)
-            # state = 'falling'
             speed_y += g
-            # if speed_y < 0:
-            #     state = 'jump'
-            # else:
-            #     state = 'falling'
 
         if self.is_climbing[0]:
             if up and down:
@@ -295,7 +282,6 @@ class Player(AnimatedSprite):
             self.rect.y = thickness
         if self.counter % 5 == 0:
             super().update(state)
-        # print(state)
         self.counter += 1
 
 
