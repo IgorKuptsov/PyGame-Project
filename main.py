@@ -8,7 +8,6 @@ PLATFORM_THICKNESS = 10
 LADDER_WIDTH = 30
 PORTAL_SIZE = 50, 100
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
-g = 2
 thickness = 2
 
 
@@ -22,9 +21,9 @@ def window_init():
     temp.destroy()
     del temp
 
-    # помещаем окно в верхний правый угол экрана
+    # помещаем окно в центр экрана
     # это нужно сделать до того, как вы создадите окно
-    screen_coords = (MONITOR_SIZE[0] - WIN_SIZE.w - 50, 50)
+    screen_coords = ((MONITOR_SIZE[0] - WIN_SIZE.w) // 2, (MONITOR_SIZE[1] - WIN_SIZE.h) // 2)
     os.environ['SDL_VIDEO_WINDOW_POS'] = f"{screen_coords[0]}, {screen_coords[1]}"
 
     screen = pg.display.set_mode(WIN_SIZE.size)
@@ -196,9 +195,10 @@ class Player(AnimatedSprite):
         self.speed = 7
         self.is_jumping = False
         self.is_climbing = False, None
-        self.jumping_frames = 15
+        self.jumping_frames = 20
         self.counter = 0
         self.count = 0
+        self.falling_acceleration = 1
 
     def update(self, *args):
         # defining keys
@@ -214,6 +214,7 @@ class Player(AnimatedSprite):
         directions = {'right': True, 'left': True}
         standing_on_platform = False
         standing_on_border = self.rect.bottom >= Border.bottom.rect.x
+        platform_above = False
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
@@ -226,7 +227,7 @@ class Player(AnimatedSprite):
             elif left and sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
                 directions['left'] = False
             if sprite.rect.top <= self.rect.top <= sprite.rect.bottom and self.is_jumping:
-                self.rect.top = sprite.rect.bottom
+                platform_above = True
 
         # Colliding with ladders
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
@@ -253,11 +254,14 @@ class Player(AnimatedSprite):
             state = 'run'
         self.rect.x += speed_x
         # y speed
-        if self.is_jumping:
+        if self.is_jumping and not platform_above:
             speed_y -= self.count
             self.count -= 1
             if not self.count:
                 self.is_jumping = False
+        elif self.is_jumping and platform_above:
+            self.is_jumping = False
+            self.count = 0
         if standing_on_border or standing_on_platform:
             self.is_jumping = False
             if space and not self.is_climbing[0]:
@@ -266,7 +270,13 @@ class Player(AnimatedSprite):
                 state = 'jump'
         elif not self.is_climbing[0]:
             state = 'jump'
-            speed_y += g
+            speed_y += self.falling_acceleration
+            if self.falling_acceleration == 1:
+                self.falling_acceleration = 2
+            elif self.falling_acceleration < 4:
+                self.falling_acceleration = self.falling_acceleration ** 2
+            else:
+                self.falling_acceleration = 8
 
         if self.is_climbing[0]:
             if up and down:
