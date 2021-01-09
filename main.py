@@ -6,6 +6,7 @@ FPS = 60
 PLAYER_SIZE = 75
 PLATFORM_THICKNESS = 10
 LADDER_WIDTH = 30
+PORTAL_SIZE = 50, 100
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
 g = 2
 thickness = 2
@@ -105,7 +106,10 @@ class Game:
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
         Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
-        # Ladder(250, 300, LADDER_WIDTH, 200 - thickness)
+
+        Portal.all_sprites = self.all_sprites
+        self.portal = Portal(250, 200)
+        Portal.portal = self.portal
 
     def run(self):
         while self.is_running:
@@ -213,7 +217,8 @@ class Player(AnimatedSprite):
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
-            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping and not self.is_climbing[0]:
+            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping and not \
+                    self.is_climbing[0]:
                 standing_on_platform = True
                 self.rect.bottom = sprite.rect.top
             elif right and sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
@@ -230,8 +235,13 @@ class Player(AnimatedSprite):
                 self.is_climbing = True, sprite
                 state = 'climb'
         if self.is_climbing[0]:
-            if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
+            if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
                 self.is_climbing = False, None
+        # Colliding with portal
+        if pg.sprite.collide_rect(self, Portal.portal):
+            # TODO: смена уровня
+            pass
         # x speed
         if left == right:
             speed_x = 0
@@ -307,6 +317,19 @@ class Ladder(pg.sprite.Sprite):
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
         self.add(self.ladders)
+
+
+class Portal(pg.sprite.Sprite):
+    all_sprites = None
+    portal = None
+
+    def __init__(self, x, y, w=PORTAL_SIZE[0], h=PORTAL_SIZE[1]):
+        super().__init__()
+        self.image = load_image('portal.jpg', None, w, h)
+        self.rect = self.image.get_rect().move(x, y)
+        self.add(self.all_sprites)
+        # self.portal = self
+        # self.add(self.portal)
 
 
 class Border(pg.sprite.Sprite):
