@@ -48,6 +48,19 @@ def load_image(name, color_key=None, w=WIN_SIZE.width, h=WIN_SIZE.height):
     return image
 
 
+################################
+def crossing_lines(a, b, c, d):
+    return a <= c <= b or c <= a <= d
+
+def collided_rects(rect1, rect2):
+    return crossing_lines(rect1.x, rect1.right, rect2.x, rect2.right) and crossing_lines(rect1.y, rect1.bottom, rect2.y, rect2.bottom)
+
+
+def collided(sprite1, sprite2):
+    return pg.sprite.collide_rect(sprite1, sprite2) or collided_rects(sprite1.rect, sprite2.rect)
+
+
+###############################
 class Game:
     BG_COLOR = pg.Color('blue')
 
@@ -68,13 +81,12 @@ class Game:
         Border.all_sprites = self.all_sprites
         Border.borders_hor = self.borders_hor
         Border.borders_vert = self.borders_vert
+        Border.bottom = Border(WIN_SIZE.width - thickness, 0, thickness, WIN_SIZE.height)
         Border(0, 0,
                WIN_SIZE.width, thickness)
         Border(0, WIN_SIZE.height - thickness,
                WIN_SIZE.width, thickness)
         Border(0, 0,
-               thickness, WIN_SIZE.height)
-        Border(WIN_SIZE.width - thickness, 0,
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
 
@@ -82,7 +94,10 @@ class Game:
         Platform.platforms = self.platforms
         Platform.all_sprites = self.all_sprites
         Platform(350, 300, 100)
-        Platform(150, 370, 100)
+        Platform(250, 300, 100)
+        Platform(270, 450, 50)
+        Platform(150, 500 - thickness - PLATFORM_THICKNESS, 100)
+        Platform(100, 350, 100, h=100)
 
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
@@ -175,30 +190,11 @@ class Player(AnimatedSprite):
         self.speed = 7
         self.is_jumping = False
         self.is_climbing = False, None
-        # self.y = 5
         self.jumping_frames = 15
         self.counter = 0
         self.count = 0
 
     def update(self, *args):
-        state = 'idle'
-        speed_y = 0
-        speed_x = 0
-        # Colliding with platforms
-        sprites = pg.sprite.spritecollide(self, Platform.platforms, False)
-        standing_on_platform = False
-        for sprite in sprites:
-            if sprite.rect.y <= self.rect.y + PLAYER_SIZE <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping:
-                standing_on_platform = True
-        # Colliding with ladders
-        sprites = pg.sprite.spritecollide(self, Ladder.ladders, False)
-        for sprite in sprites:
-            if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
-                self.is_climbing = True, sprite
-                state = 'climb'
-        if self.is_climbing[0]:
-            if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
-                self.is_climbing = False, None
         # defining keys
         keys = pg.key.get_pressed()
         left = keys[K_a] or keys[K_LEFT]
@@ -206,17 +202,48 @@ class Player(AnimatedSprite):
         up = keys[K_w] or keys[K_UP]
         down = keys[K_s] or keys[K_DOWN]
         space = keys[K_SPACE]
+        state = 'idle'
+        speed_y = 0
+        speed_x = 0
+        directions = {'right': True, 'left': True}
+        standing_on_platform = False
+        standing_on_border = self.rect.bottom >= Border.bottom.rect.x
+        # Colliding with platforms
+        sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
+        for sprite in sprites:
+            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping:
+                standing_on_platform = True
+                self.rect.bottom = sprite.rect.top
+
+        # Colliding with ladders
+        sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
+        for sprite in sprites:
+            if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
+                self.is_climbing = True, sprite
+                state = 'climb'
+        if self.is_climbing[0]:
+            if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
+                self.is_climbing = False, None
         # x speed
         if left == right:
             speed_x = 0
-        elif left:
+        elif left and directions['left']:
             speed_x = -self.speed
             state = 'run'
-        elif right:
+        elif right and directions['right']:
             speed_x = self.speed
             state = 'run'
         self.rect.x += speed_x
         # y speed
+        if standing_on_border or standing_on_platform:
+            self.is_jumping = False
+            if space and not self.is_climbing[0]:
+                self.is_jumping = True
+                self.count = self.jumping_frames
+                state = 'jump'
+        elif not self.is_climbing[0]:
+            state = 'jump'
+            speed_y += g
         if self.is_climbing[0]:
             if up and down:
                 speed_y = 0
@@ -232,25 +259,16 @@ class Player(AnimatedSprite):
             self.count -= 1
             if not self.count:
                 self.is_jumping = False
-        if pg.sprite.spritecollideany(self, Border.borders_hor) or standing_on_platform:
-            self.is_jumping = False
-            if space and not self.is_climbing[0]:
-                self.is_jumping = True
-                self.count = self.jumping_frames
-                state = 'jump'
-        elif not self.is_climbing[0]:
-            state = 'jump'
-            speed_y += g
         self.rect.y += speed_y
         # Colliding with vertical borders
-        if self.rect.x < thickness:
+        if self.rect.x <= thickness:
             self.rect.x = thickness
-        elif self.rect.x + PLAYER_SIZE > WIN_SIZE.width - thickness:
+        elif self.rect.x + PLAYER_SIZE >= WIN_SIZE.width - thickness:
             self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
         # Colliding with horizontal borders
-        if self.rect.y + PLAYER_SIZE > WIN_SIZE.height:
+        if self.rect.y + PLAYER_SIZE >= WIN_SIZE.height:
             self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
-        elif self.rect.y < thickness:
+        elif self.rect.y <= thickness:
             self.rect.y = thickness
 
         self.counter += 1
@@ -286,6 +304,7 @@ class Border(pg.sprite.Sprite):
     all_sprites = None
     borders_hor = None
     borders_vert = None
+    bottom = None
 
     def __init__(self, x, y, w, h):
         super().__init__()
