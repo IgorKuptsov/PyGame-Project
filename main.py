@@ -1,15 +1,8 @@
 import pygame as pg
 from pygame.locals import *
 import os
-
-FPS = 60
-PLAYER_SIZE = 75
-PLATFORM_THICKNESS = 10
-LADDER_WIDTH = 30
-PORTAL_SIZE = 50, 100
-WIN_SIZE = pg.Rect(0, 0, 500, 500)
-thickness = 2
-
+from config import *
+from first_level import objects
 
 def window_init():
     # получаем размеры монитора
@@ -64,7 +57,6 @@ def collided(sprite1, sprite2):
 
 ###############################
 class Game:
-    BG_COLOR = pg.Color('blue')
 
     def __init__(self):
         pg.init()
@@ -72,10 +64,6 @@ class Game:
         self.screen = window_init()
         self.screen_bg = load_image('bg_test.jpg')
         self.all_sprites = pg.sprite.Group()
-        # Creating the player
-        self.player = pg.sprite.Group()
-        Player.player = self.player
-        Player(load_image('animated_player_test.png', -1))
         # Creating the borders
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
@@ -91,6 +79,13 @@ class Game:
         Border(0, 0,
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
+        # Creating the player
+        for obj, value in objects.item():
+            if obj == 'Player':
+                self.player = pg.sprite.Group()
+                Player.player = self.player
+                Player(load_image('animated_player_test.png', -1), value)
+        
 
         self.platforms = pg.sprite.Group()
         Platform.platforms = self.platforms
@@ -110,6 +105,13 @@ class Game:
         self.portal = Portal(250, 200)
         Portal.portal = self.portal
 
+    def load_level(self, level):
+            eval('from levels.{level} import objects')
+            for obj, value in objects.item():
+            if obj == 'Player':
+                self.player = pg.sprite.Group()
+                Player.player = self.player
+                Player(load_image('animated_player_test.png', -1), value)
     def run(self):
         while self.is_running:
             self.events()
