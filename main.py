@@ -75,7 +75,7 @@ class Game:
         # Creating the player
         self.player = pg.sprite.Group()
         Player.player = self.player
-        Player(load_image('animated_player_test.png', -1))
+        Player(load_image('animated_player_test2.png', -1))
         # Creating the borders
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
