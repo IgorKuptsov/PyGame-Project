@@ -2,7 +2,7 @@ import pygame as pg
 from pygame.locals import *
 import os
 from config import *
-from first_level import objects
+
 
 def window_init():
     # получаем размеры монитора
@@ -79,39 +79,32 @@ class Game:
         Border(0, 0,
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
-        # Creating the player
-        for obj, value in objects.item():
-            if obj == 'Player':
-                self.player = pg.sprite.Group()
-                Player.player = self.player
-                Player(load_image('animated_player_test.png', -1), value)
-        
-
-        self.platforms = pg.sprite.Group()
-        Platform.platforms = self.platforms
-        Platform.all_sprites = self.all_sprites
-        Platform(350, 300, 100)
-        Platform(250, 300, 100)
-        Platform(350, 450, 50)
-        Platform(150, 500 - thickness - PLATFORM_THICKNESS, 100)
-        Platform(100, 450, 100, h=100)
-
-        self.ladders = pg.sprite.Group()
-        Ladder.ladders = self.ladders
-        Ladder.all_sprites = self.all_sprites
-        Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
-
-        Portal.all_sprites = self.all_sprites
-        self.portal = Portal(250, 200)
-        Portal.portal = self.portal
+        # Creating objects, loading the level
+        self.load_level(1)
+       
 
     def load_level(self, level):
-            eval('from levels.{level} import objects')
-            for obj, value in objects.item():
-            if obj == 'Player':
-                self.player = pg.sprite.Group()
-                Player.player = self.player
-                Player(load_image('animated_player_test.png', -1), value)
+        #it doesn`t work
+            eval(f'from levels.level{level} import objects')
+            self.ladders = pg.sprite.Group()
+            Ladder.ladders = self.ladders
+            Ladder.all_sprites = self.all_sprites
+            self.platforms = pg.sprite.Group()
+            Platform.platforms = self.platforms
+            Platform.all_sprites = self.all_sprites
+            for obj, value in objects.items():
+                if obj == 'Player':
+                    self.player = pg.sprite.Group()
+                    Player.player = self.player
+                    Player(load_image('animated_player_test.png', -1), *value)
+                elif obj == "Platform":
+                    Platform(*value)
+                elif obj == 'Ladder':
+                    Ladder(*value)
+                elif obj == 'Portal':
+                    Portal.all_sprites = self.all_sprites
+                    self.portal = Portal(*value)
+                    Portal.portal = self.portal
     def run(self):
         while self.is_running:
             self.events()

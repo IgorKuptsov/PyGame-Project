@@ -1,3 +1,4 @@
+import pygame as pg
 FPS = 60
 PLAYER_SIZE = 75
 PLATFORM_THICKNESS = 10
