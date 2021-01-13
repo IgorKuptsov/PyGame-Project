@@ -81,30 +81,32 @@ class Game:
         self.clock = pg.time.Clock()
         # Creating objects, loading the level
         self.load_level(1)
-       
 
     def load_level(self, level):
-        #it doesn`t work
-            eval(f'from levels.level{level} import objects')
-            self.ladders = pg.sprite.Group()
-            Ladder.ladders = self.ladders
-            Ladder.all_sprites = self.all_sprites
-            self.platforms = pg.sprite.Group()
-            Platform.platforms = self.platforms
-            Platform.all_sprites = self.all_sprites
-            for obj, value in objects.items():
-                if obj == 'Player':
-                    self.player = pg.sprite.Group()
-                    Player.player = self.player
-                    Player(load_image('animated_player_test.png', -1), *value)
-                elif obj == "Platform":
-                    Platform(*value)
-                elif obj == 'Ladder':
-                    Ladder(*value)
-                elif obj == 'Portal':
-                    Portal.all_sprites = self.all_sprites
-                    self.portal = Portal(*value)
-                    Portal.portal = self.portal
+        # it doesn`t work
+        exec(f'from levels.level{level} import *', globals())
+        self.ladders = pg.sprite.Group()
+        Ladder.ladders = self.ladders
+        Ladder.all_sprites = self.all_sprites
+        self.platforms = pg.sprite.Group()
+        Platform.platforms = self.platforms
+        Platform.all_sprites = self.all_sprites
+        for obj, value in objects.items():
+            if obj == 'Player':
+                self.player = pg.sprite.Group()
+                Player.player = self.player
+                # TODO: get the current skin of the player from the file
+                Player(load_image('animated_player_test.png', -1), *value)
+            elif obj == "Platform":
+                Platform(*value)
+            elif obj == 'Ladder':
+                Ladder(*value)
+            elif obj == 'Portal':
+                Portal.all_sprites = self.all_sprites
+                self.portal = Portal(*value)
+                Portal.portal = self.portal
+            # TODO: add enemies
+
     def run(self):
         while self.is_running:
             self.events()
@@ -135,6 +137,7 @@ class Game:
 
 
 class AnimatedSprite(pg.sprite.Sprite):
+    # TODO: set different animations for running right/left
     def __init__(self, sheet, columns=7, rows=4, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
         self.climb_frames = []
