@@ -84,8 +84,8 @@ class Game:
        
 
     def load_level(self, level):
-        #it doesn`t work
-            eval(f'from levels.level{level} import objects')
+        #creating level
+            exec(f'from levels.level{level} import *', globals())#import file with objects
             self.ladders = pg.sprite.Group()
             Ladder.ladders = self.ladders
             Ladder.all_sprites = self.all_sprites
@@ -93,13 +93,14 @@ class Game:
             Platform.platforms = self.platforms
             Platform.all_sprites = self.all_sprites
             for obj, value in objects.items():
+                print(obj)
                 if obj == 'Player':
                     self.player = pg.sprite.Group()
                     Player.player = self.player
                     Player(load_image('animated_player_test.png', -1), *value)
-                elif obj == "Platform":
+                elif "Platform" in obj:
                     Platform(*value)
-                elif obj == 'Ladder':
+                elif 'Ladder' in obj:
                     Ladder(*value)
                 elif obj == 'Portal':
                     Portal.all_sprites = self.all_sprites
