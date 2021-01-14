@@ -95,20 +95,27 @@ class Game:
         self.platforms = pg.sprite.Group()
         Platform.platforms = self.platforms
         Platform.all_sprites = self.all_sprites
-        Platform(350, 300, 100)
-        Platform(250, 300, 100)
-        Platform(350, 450, 50)
-        Platform(150, 500 - thickness - PLATFORM_THICKNESS, 100)
-        Platform(100, 450, 100, h=100)
+        # Platform(350, 300, 100)
+        # Platform(250, 300, 100)
+        # Platform(350, 450, 50)
+        # Platform(150, 500 - thickness - PLATFORM_THICKNESS, 100)
+        # Platform(100, 450, 100, h=100)
 
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
-        Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
+        # Ladder(450, 300, LADDER_WIDTH, 200 - thickness)
 
         Portal.all_sprites = self.all_sprites
-        self.portal = Portal(250, 200)
+        self.portal = Portal(400, WIN_SIZE.height - thickness - PORTAL_SIZE[1])
         Portal.portal = self.portal
+
+        Platform(200, 500 - thickness - PLATFORM_THICKNESS, 200)
+
+        self.enemies = pg.sprite.Group()
+        Enemy.enemies = self.enemies
+        Enemy.all_sprites = self.all_sprites
+        Enemy(load_image('enemy.png', -1), x=200, y=500 - thickness - PLATFORM_THICKNESS - PLAYER_SIZE, movement_type='along_platform')
 
     def run(self):
         while self.is_running:
@@ -126,7 +133,9 @@ class Game:
                     self.is_running = False
 
     def update(self):
-        self.player.update()
+        print(self.player.update())
+        # print('dead in the game')
+        self.enemies.update()
         self.clock.tick_busy_loop(FPS)
 
     def render(self):
@@ -200,6 +209,11 @@ class Player(AnimatedSprite):
         self.count = 0
         self.falling_acceleration = 1
 
+    def die(self):
+        pass
+        # print(2)
+        # return 1
+
     def update(self, *args):
         # defining keys
         keys = pg.key.get_pressed()
@@ -215,6 +229,12 @@ class Player(AnimatedSprite):
         standing_on_platform = False
         standing_on_border = self.rect.bottom >= Border.bottom.rect.x
         platform_above = False
+        # Colliding with enemies
+        # sprites = pg.sprite.spritecollide(self, Enemy.enemies, False, collided=collided)
+        if pg.sprite.spritecollideany(self, Enemy.enemies, collided=collided):
+            self.die()
+            return 1
+
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
@@ -340,6 +360,130 @@ class Portal(pg.sprite.Sprite):
         self.add(self.all_sprites)
         # self.portal = self
         # self.add(self.portal)
+
+
+class Enemy(Player):
+    all_sprites = None
+    enemies = None
+
+    def __init__(self, *args, movement_type='idle', weapon='no', **kwargs):
+        AnimatedSprite.__init__(self, *args, **kwargs)
+        self.speed = 3
+        self.movement_type = movement_type
+        self.weapon = weapon
+        self.dir = 'right'
+        self.enemy_platform()
+        self.add(self.all_sprites)
+        self.add(self.enemies)
+        self.counter = 0
+        # print(self.rect)
+        # print(self.platform.rect.left)
+
+    def update(self):
+        state = 'idle'
+        # Movement type
+        if self.movement_type == 'idle':
+            pass
+        elif self.movement_type == 'along_platform':
+            if self.dir == 'right' and self.rect.right < self.platform.rect.right:
+                self.rect.x += self.speed
+            elif self.dir == 'right' and self.rect.right >= self.platform.rect.right:
+                self.change_dir()
+            elif self.dir == 'left' and self.rect.left > self.platform.rect.left:
+                self.rect.x -= self.speed
+            elif self.dir == 'left' and self.rect.left <= self.platform.rect.left:
+                self.change_dir()
+            state = 'run'
+        # print(self.rect.bottom, self.rect.x)
+
+        # Colliding with platforms
+        # sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
+        # for sprite in sprites:
+        #     if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS:
+        #         standing_on_platform = True
+        #         self.rect.bottom = sprite.rect.top
+        #     elif right and sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
+        #         directions['right'] = False
+        #     elif left and sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
+        #         directions['left'] = False
+        #     if sprite.rect.top <= self.rect.top <= sprite.rect.bottom and self.is_jumping:
+        #         platform_above = True
+
+        # Colliding with ladders
+        # sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
+        # for sprite in sprites:
+        #     if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
+        #         self.is_climbing = True, sprite
+        #         state = 'climb'
+        # if self.is_climbing[0]:
+        #     if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x
+        #             or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
+        #         self.is_climbing = False, None
+        # if pg.sprite.collide_rect(self, Portal.portal):
+        #     # TODO: смена уровня
+        #     pass
+        # x speed
+        # if left == right:
+        #     speed_x = 0
+        # elif left and directions['left']:
+        #     speed_x = -self.speed
+        #     state = 'run'
+        # elif right and directions['right']:
+        #     speed_x = self.speed
+        #     state = 'run'
+        # self.rect.x += speed_x
+        # y speed
+        # if self.is_jumping and not platform_above:
+        #     speed_y -= self.count
+        #     self.count -= 1
+        #     if not self.count:
+        #         self.is_jumping = False
+        # elif self.is_jumping and platform_above:
+        #     self.is_jumping = False
+        #     self.count = 0
+        # if not (standing_on_border and standing_on_platform):
+        #     state = 'jump'
+        #     speed_y += self.falling_acceleration
+        #     if self.falling_acceleration == 1:
+        #         self.falling_acceleration = 2
+        #     elif self.falling_acceleration < 4:
+        #         self.falling_acceleration = self.falling_acceleration ** 2
+        #     else:
+        #         self.falling_acceleration = 8
+
+        # if self.is_climbing[0]:
+        #     if up and down:
+        #         speed_y = 0
+        #     # If the player is on the top of the ladder he can not climb up
+        #     elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) >= self.speed:
+        #         speed_y = -self.speed
+        #     elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) < self.speed:
+        #         speed_y = self.is_climbing[1].rect.y - self.rect.y - PLAYER_SIZE
+        #     elif down:
+        #         speed_y = self.speed
+
+        # self.rect.y += speed_y
+        # Colliding with vertical borders
+        if self.rect.x <= thickness:
+            self.rect.x = thickness
+        elif self.rect.x + PLAYER_SIZE >= WIN_SIZE.width - thickness:
+            self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
+        # Colliding with horizontal borders
+        if self.rect.y + PLAYER_SIZE >= WIN_SIZE.height:
+            self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
+        elif self.rect.y <= thickness:
+            self.rect.y = thickness
+        if self.counter % 5 == 0:
+            AnimatedSprite.update(self, state)
+        self.counter += 1
+
+    def enemy_platform(self):
+        if self.movement_type == 'along_platform':
+            platform = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)[0]
+            self.platform = platform
+
+    def change_dir(self):
+        self.dir = 'left' if self.dir == 'right' else 'right'
 
 
 class Border(pg.sprite.Sprite):
