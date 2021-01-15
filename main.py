@@ -114,6 +114,7 @@ class Game:
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
         self.black_surface.fill((0, 0, 0))
+        self.death_image = load_image('death_test.png', -1, 250, 100)
 
     def run(self):
         while self.is_running:
@@ -127,8 +128,13 @@ class Game:
             if event.type == QUIT:
                 self.is_running = False
             if event.type == KEYUP:
-                if event.key == K_ESCAPE:
-                    self.is_running = False
+                if event.key == K_ESCAPE and not self.player.is_alive:
+                    # TODO: выйти в меню выбора уровней
+                    print('menu')
+                    # self.is_running = False
+                if event.key == K_RETURN:
+                    # TODO: Загрузить текущий уровень
+                    print('reloading current level')
 
     def update(self):
         if self.player.is_alive:
@@ -143,6 +149,8 @@ class Game:
         if not self.player.is_alive:
             self.black_surface.set_alpha(self.transparency)
             self.screen.blit(self.black_surface, (0, 0))
+            self.screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
+                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
             if self.transparency <= 150:
                 self.transparency += 1
         pg.display.update()
@@ -162,6 +170,7 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.idle_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
+        # self.flag = True
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
@@ -193,6 +202,15 @@ class AnimatedSprite(pg.sprite.Sprite):
         frames = getattr(self, f'{state}_frames')
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
+        # 6print(self.rect.size)
+        # self.rect.size = self.image.get_size()
+        # if self.flag:
+        #     print(1)
+        #     rect = pg.Surface(self.rect.size)
+        #     # rect.set_alpha(20)
+        #     pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
+        #     self.image.blit(rect, (0, 0))
+        #     self.flag = False
 
 
 class Player(AnimatedSprite):
