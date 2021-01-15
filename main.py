@@ -107,7 +107,6 @@ class Game:
                     self.portal = Portal(*value)
                     Portal.portal = self.portal
 
-        # it doesn`t work
         exec(f'from levels.level{level} import *', globals())
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
