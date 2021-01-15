@@ -83,30 +83,7 @@ class Game:
         self.load_level(1)
 
     def load_level(self, level):
-
         #creating level
-            exec(f'from levels.level{level} import *', globals())#import file with objects
-            self.ladders = pg.sprite.Group()
-            Ladder.ladders = self.ladders
-            Ladder.all_sprites = self.all_sprites
-            self.platforms = pg.sprite.Group()
-            Platform.platforms = self.platforms
-            Platform.all_sprites = self.all_sprites
-            for obj, value in objects.items():
-                print(obj)
-                if obj == 'Player':
-                    self.player = pg.sprite.Group()
-                    Player.player = self.player
-                    Player(load_image('animated_player_test.png', -1), *value)
-                elif "Platform" in obj:
-                    Platform(*value)
-                elif 'Ladder' in obj:
-                    Ladder(*value)
-                elif obj == 'Portal':
-                    Portal.all_sprites = self.all_sprites
-                    self.portal = Portal(*value)
-                    Portal.portal = self.portal
-
         exec(f'from levels.level{level} import *', globals())
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
@@ -120,15 +97,19 @@ class Game:
                 Player.player = self.player
                 # TODO: get the current skin of the player from the file
                 Player(load_image('animated_player_test.png', -1), *value)
-            elif obj == "Platform":
+            elif "Platform" in obj:
                 Platform(*value)
-            elif obj == 'Ladder':
+            elif 'Ladder' in obj:
                 Ladder(*value)
-            elif obj == 'Portal':
+            elif 'Portal' in obj:
                 Portal.all_sprites = self.all_sprites
                 self.portal = Portal(*value)
                 Portal.portal = self.portal
             # TODO: add enemies
+            '''
+            elif "Enemy" in obj:
+                
+            '''
 
     def run(self):
         while self.is_running:
