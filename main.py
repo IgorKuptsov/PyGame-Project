@@ -3,7 +3,7 @@ from pygame.locals import *
 import os
 
 FPS = 60
-PLAYER_SIZE = 75
+PLAYER_SIZE = 50
 PLATFORM_THICKNESS = 10
 LADDER_WIDTH = 30
 PORTAL_SIZE = 50, 100
@@ -104,7 +104,7 @@ class Game:
         Platform(200, 400, 100)
         Platform(200, 310, 100)
         # Platform(400, 500 - thickness - 100, 100, h=100)
-        Platform(500 - 30 - 2, 423, 30)
+        Platform(500 - 100 - thickness, 423, 100)
 
         # Creating the player
         self.player_sprite = pg.sprite.Group()
@@ -114,8 +114,8 @@ class Game:
         self.enemies = pg.sprite.Group()
         Enemy.enemies = self.enemies
         Enemy.all_sprites = self.all_sprites
-        # Enemy(load_image('enemy.png', -1), x=200, y=750 - thickness - PLATFORM_THICKNESS - PLAYER_SIZE,
-        #       movement_type='in_range', movement_x=50)
+        Enemy(load_image('enemy.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
+              movement_type='along_platform')
 
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
@@ -178,30 +178,46 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.idle_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
-        # self.flag = True
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
+        nums = []
+        # the size of the images of the player in different states are different
+        # the jumping animation has seven images and one of them has the maximum size
+        # among all the images of the player
+        # so we get a max_rect of this size below
+        for i in range(7):
+            frame_location = (self.rect.w * i, self.rect.h * 3)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            rect = frame.get_bounding_rect()
+            nums.append(rect)
+        nums.sort(key=lambda x: x.size, reverse=True)
+        max_rect = nums[0]
         frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
+        frame = frame.subsurface(max_rect)
         frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
         self.climb_frames.append(frame)
         # idle row = 1, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 1)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = frame.subsurface(max_rect)
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.idle_frames.append(frame)
         # run_frames row = 2, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 2)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = frame.subsurface(max_rect)
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.run_frames.append(frame)
         # jump_frames row = 3, columns = 7
         for i in range(7):
             frame_location = (self.rect.w * i, self.rect.h * 3)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            frame = frame.subsurface(max_rect)
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.jump_frames.append(frame)
 
@@ -209,7 +225,7 @@ class AnimatedSprite(pg.sprite.Sprite):
         frames = getattr(self, f'{state}_frames')
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
-
+        # this is showing sprite's rect for debugging
         # rect = pg.Surface(self.rect.size, pg.SRCALPHA)
         # rect.set_alpha(10)
         # pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
@@ -293,6 +309,12 @@ class Player(AnimatedSprite):
             state = 'run'
         elif right and directions['right']:
             speed_x = self.speed
+            state = 'run'
+        elif left:
+            # TODO: state = run_left
+            state = 'run'
+        elif right:
+            # TODO: state = run_right
             state = 'run'
         self.rect.x += speed_x
         # y speed
