@@ -72,11 +72,6 @@ class Game:
         self.screen = window_init()
         self.screen_bg = load_image('bg_test.jpg')
         self.all_sprites = pg.sprite.Group()
-        # Creating the player
-        self.player_sprite = pg.sprite.Group()
-        Player.player = self.player_sprite
-        self.player = Player(load_image('animated_player_test2.png', -1))
-        # Creating the borders
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
         self.balls = pg.sprite.Group()
@@ -100,16 +95,27 @@ class Game:
         Ladder.all_sprites = self.all_sprites
 
         Portal.all_sprites = self.all_sprites
-        self.portal = Portal(400, WIN_SIZE.height - thickness - PORTAL_SIZE[1])
+        self.portal = Portal(400, 2)
         Portal.portal = self.portal
 
-        Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
+        # Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
+        # Platform(200, 500 - thickness - 100, 200, h=100)
+        Platform(100, 310, 100, h=100)
+        Platform(200, 400, 100)
+        Platform(200, 310, 100)
+        # Platform(400, 500 - thickness - 100, 100, h=100)
+        Platform(500 - 30 - 2, 423, 30)
+
+        # Creating the player
+        self.player_sprite = pg.sprite.Group()
+        Player.player = self.player_sprite
+        self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
 
         self.enemies = pg.sprite.Group()
         Enemy.enemies = self.enemies
         Enemy.all_sprites = self.all_sprites
-        Enemy(load_image('enemy.png', -1), x=200, y=750 - thickness - PLATFORM_THICKNESS - PLAYER_SIZE,
-              movement_type='in_range', movement_x=100)
+        # Enemy(load_image('enemy.png', -1), x=200, y=750 - thickness - PLATFORM_THICKNESS - PLAYER_SIZE,
+        #       movement_type='in_range', movement_x=50)
 
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
@@ -128,6 +134,8 @@ class Game:
             if event.type == QUIT:
                 self.is_running = False
             if event.type == KEYUP:
+                if event.key == K_ESCAPE:
+                    self.is_running = False
                 if event.key == K_ESCAPE and not self.player.is_alive:
                     # TODO: выйти в меню выбора уровней
                     print('menu')
@@ -175,7 +183,6 @@ class AnimatedSprite(pg.sprite.Sprite):
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
-        # climb row = 0, columns = 1
         frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
         frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
         self.climb_frames.append(frame)
@@ -202,15 +209,11 @@ class AnimatedSprite(pg.sprite.Sprite):
         frames = getattr(self, f'{state}_frames')
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
-        # 6print(self.rect.size)
-        # self.rect.size = self.image.get_size()
-        # if self.flag:
-        #     print(1)
-        #     rect = pg.Surface(self.rect.size)
-        #     # rect.set_alpha(20)
-        #     pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
-        #     self.image.blit(rect, (0, 0))
-        #     self.flag = False
+
+        # rect = pg.Surface(self.rect.size, pg.SRCALPHA)
+        # rect.set_alpha(10)
+        # pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
+        # self.image.blit(rect, (0, 0))
 
 
 class Player(AnimatedSprite):
@@ -257,17 +260,17 @@ class Player(AnimatedSprite):
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
-            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_jumping and not \
-                    self.is_climbing[0]:
+            if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_climbing[0]:
                 standing_on_platform = True
                 self.rect.bottom = sprite.rect.top
-            elif right and sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
+            elif sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
                 directions['right'] = False
-            elif left and sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
+            elif sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
                 directions['left'] = False
-            if sprite.rect.top <= self.rect.top <= sprite.rect.bottom and self.is_jumping:
+            if (sprite.rect.top <= self.rect.top <= sprite.rect.bottom < self.rect.bottom) \
+                    or (self.rect.top < sprite.rect.top and self.rect.bottom > sprite.rect.bottom) \
+                    and self.is_jumping:
                 platform_above = True
-
         # Colliding with ladders
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
         for sprite in sprites:
@@ -296,13 +299,12 @@ class Player(AnimatedSprite):
         if self.is_jumping and not platform_above:
             speed_y -= self.count
             self.count -= 1
-            # print(speed_y)
             if not self.count:
                 self.is_jumping = False
         elif self.is_jumping and platform_above:
             self.is_jumping = False
-            self.count = 0
         if standing_on_border or standing_on_platform:
+            self.falling_acceleration = 1
             self.is_jumping = False
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
@@ -343,7 +345,6 @@ class Player(AnimatedSprite):
         if self.counter % 5 == 0:
             super().update(state)
         self.counter += 1
-        # print(self.rect.bottom, standing_on_platform)
 
 
 class Platform(pg.sprite.Sprite):
