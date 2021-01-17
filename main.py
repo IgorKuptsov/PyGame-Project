@@ -7,6 +7,7 @@ PLAYER_SIZE = 50
 PLATFORM_THICKNESS = 10
 LADDER_WIDTH = 30
 PORTAL_SIZE = 50, 100
+BULLET_SIZE = 15, 7
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
 thickness = 2
 
@@ -117,6 +118,11 @@ class Game:
         Enemy(load_image('enemy.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
               movement_type='along_platform')
 
+        self.bullets = pg.sprite.Group()
+        Bullet.bullets = self.bullets
+        Bullet.all_sprites = self.all_sprites
+        Bullet(10, 10)
+
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
         self.black_surface.fill((0, 0, 0))
@@ -182,42 +188,91 @@ class AnimatedSprite(pg.sprite.Sprite):
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
-        nums = []
-        # the size of the images of the player in different states are different
-        # the jumping animation has seven images and one of them has the maximum size
-        # among all the images of the player
-        # so we get a max_rect of this size below
-        for i in range(7):
-            frame_location = (self.rect.w * i, self.rect.h * 3)
-            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-            # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-            rect = frame.get_bounding_rect()
-            nums.append(rect)
-        nums.sort(key=lambda x: x.size, reverse=True)
-        max_rect = nums[0]
+        # nums = []
+        # # the size of the images of the player in different states are different
+        # # the jumping animation has seven images and one of them has the maximum size
+        # # among all the images of the player
+        # # so we get a max_rect of this size below
+        # for i in range(7):
+        #     frame_location = (self.rect.w * i, self.rect.h * 3)
+        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+        #     # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+        #     rect = frame.get_bounding_rect()
+        #     nums.append(rect)
+        # nums.sort(key=lambda x: x.size, reverse=True)
+        # max_rect = nums[0]
+        # nums = []
+        # for i in range(4):
+        #     frame_location = (self.rect.w * i, self.rect.h * 1)
+        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+        #     rect = frame.get_bounding_rect()
+        #     nums.append(rect)
+        #     # print('idle', rect.height)
+        # for i in range(4):
+        #     frame_location = (self.rect.w * i, self.rect.h * 2)
+        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+        #     rect = frame.get_bounding_rect()
+        #     nums.append(rect)
+        #     # print('run', rect.height)
+        # for i in range(7):
+        #     frame_location = (self.rect.w * i, self.rect.h * 3)
+        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+        #     # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+        #     rect = frame.get_bounding_rect()
+        #     nums.append(rect)
+        #     # print('jump', rect.height)
+        # nums.sort(key=lambda x: x.x)
+        # print(nums)
+        # min_x = nums[0].x
+        # nums.sort(key=lambda x: x.y)
+        # min_y = nums[0].y
+        # nums.sort(key=lambda x: x.width, reverse=True)
+        # max_width = nums[0].width
+        # nums.sort(key=lambda x: x.height, reverse=True)
+        # max_height = nums[0].height
+#
+        # print(self.rect.height)
+        # max_rect = pg.Rect(min_x, min_y, max_width, max_height)
+
         frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
-        frame = frame.subsurface(max_rect)
+
+        rect = frame.get_bounding_rect()
+        frame = frame.subsurface(rect)
+        # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
+
         frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
         self.climb_frames.append(frame)
         # idle row = 1, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 1)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-            frame = frame.subsurface(max_rect)
+
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
+
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.idle_frames.append(frame)
         # run_frames row = 2, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 2)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-            frame = frame.subsurface(max_rect)
+
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
+
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.run_frames.append(frame)
         # jump_frames row = 3, columns = 7
         for i in range(7):
             frame_location = (self.rect.w * i, self.rect.h * 3)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-            frame = frame.subsurface(max_rect)
+
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
+
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.jump_frames.append(frame)
 
@@ -226,10 +281,10 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
         # this is showing sprite's rect for debugging
-        # rect = pg.Surface(self.rect.size, pg.SRCALPHA)
-        # rect.set_alpha(10)
-        # pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
-        # self.image.blit(rect, (0, 0))
+        rect = pg.Surface(self.rect.size, pg.SRCALPHA)
+        rect.set_alpha(10)
+        pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
+        self.image.blit(rect, (0, 0))
 
 
 class Player(AnimatedSprite):
@@ -399,7 +454,7 @@ class Portal(pg.sprite.Sprite):
 
     def __init__(self, x, y, w=PORTAL_SIZE[0], h=PORTAL_SIZE[1]):
         super().__init__()
-        self.image = load_image('portal.jpg', None, w, h)
+        self.image = load_image('portal.jpg', -1, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
 
@@ -486,6 +541,18 @@ class Border(pg.sprite.Sprite):
             self.add(Border.borders_vert)
         else:
             self.add(Border.borders_hor)
+
+
+class Bullet(pg.sprite.Sprite):
+    all_sprites = None
+    bullets = None
+
+    def __init__(self, x, y, *args, w=BULLET_SIZE[0], h=BULLET_SIZE[1], **kwargs):
+        super().__init__()
+        self.image = load_image('bullet.png', -1, w, h)
+        self.rect = self.image.get_rect().move(x, y)
+        self.add(self.all_sprites)
+        self.add(self.bullets)
 
 
 if __name__ == '__main__':
