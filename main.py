@@ -68,8 +68,8 @@ def collided(sprite1, sprite2):
 def bg_music(name='Fantasy_Game_Background.mp3'):
     fullname = os.path.join('data', name)
     pg.mixer.music.load(fullname)
-    pg.mixer.music.set_volume(0.7)
-    pg.mixer.music.play(-1, fade_ms=5000)
+    pg.mixer.music.set_volume(0.12)
+    pg.mixer.music.play(-1, fade_ms=1500)
 
 
 class Game:
@@ -102,7 +102,7 @@ class Game:
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
-        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498 - 310)
+        Ladder(100 - LADDER_WIDTH, 10, LADDER_WIDTH, 498 - 310 + 300)
 
         Portal.all_sprites = self.all_sprites
         self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
@@ -129,10 +129,10 @@ class Game:
               movement_type='idle')
         Enemy.player = self.player
 
-        self.bullets = pg.sprite.Group()
-        Bullet.bullets = self.bullets
-        Bullet.all_sprites = self.all_sprites
-        Bullet(10, 10)
+        # self.bullets = pg.sprite.Group()
+        # Bullet.bullets = self.bullets
+        # Bullet.all_sprites = self.all_sprites
+        # Bullet(10, 10)
 
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
@@ -305,15 +305,20 @@ class Player(AnimatedSprite):
         # sounds
         self.cur_sound = None
         self.running_sound = pg.mixer.Sound(os.path.join('data', 'footstep.ogg'))
-        self.running_sound.set_volume(0.5)
+        self.running_sound.set_volume(0.3)
         self.jump_sound = pg.mixer.Sound(os.path.join('data', 'jump.mp3'))
-        self.jump_sound.set_volume(1.5)
-        self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'ladder_sound.mp3'))
+        self.jump_sound.set_volume(0.9)
+        self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'ladder1.mp3'))
+        self.climbing_sound.set_volume(0.5)
+        self.death_sound = pg.mixer.Sound(os.path.join('data', 'death_sound.mp3'))
+        self.death_sound.set_volume(0.5)
         # self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'Fantasy_Game_Background.mp3'))
 
     def die(self):
         # return 1
         self.is_alive = False
+        pg.mixer.music.stop()
+        self.death_sound.play()
 
     def update(self, *args):
         # Colliding with enemies
