@@ -102,7 +102,7 @@ class Game:
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
-        Ladder(100 - LADDER_WIDTH, 10, LADDER_WIDTH, 498 - 310 + 300)
+        Ladder(100 - LADDER_WIDTH, 10, LADDER_WIDTH, 498 - 310 + 200)
 
         Portal.all_sprites = self.all_sprites
         self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
@@ -366,7 +366,7 @@ class Player(AnimatedSprite):
                 state = f'climb_{self.watching_dir}'
         if self.is_climbing[0]:
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
@@ -404,7 +404,7 @@ class Player(AnimatedSprite):
                 self.cur_sound = self.jump_sound
                 # state = 'jump'
                 state = f'jump_{self.watching_dir}'
-        elif not self.is_climbing[0]:
+        elif not self.is_climbing[0] or (self.is_climbing[0] and self.is_jumping):
             state = f'jump_{self.watching_dir}'
             speed_y += self.falling_acceleration
             if self.falling_acceleration == 1:
@@ -439,14 +439,12 @@ class Player(AnimatedSprite):
         if self.counter % 5 == 0:
             super().update(state)
         self.counter += 1
-        if 'run' in state and self.counter % 5 == 0:
+        if 'run' in state and self.counter % 5 == 0 and not self.is_climbing[0] and not self.is_jumping:
             self.running_sound.play()
         elif 'climb' in state and speed_y and self.cur_sound != self.climbing_sound:
-            # print(self.counter)
             self.climbing_sound.play()
             self.cur_sound = self.climbing_sound
-        elif 'climb' in state and not speed_y or('climb' not in state and self.cur_sound == self.climbing_sound):
-            # print('aaa')
+        elif 'climb' in state and not speed_y or ('climb' not in state and self.cur_sound == self.climbing_sound):
             self.climbing_sound.stop()
             self.cur_sound = None
 
