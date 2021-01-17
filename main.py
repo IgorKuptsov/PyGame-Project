@@ -112,13 +112,14 @@ class Game:
         self.player_sprite = pg.sprite.Group()
         Player.player = self.player_sprite
         # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
-        self.player = Player(load_image('player11.png', -1), x=200, y=320)
+        self.player = Player(load_image('player14.png', -1), x=200, y=320)
 
         self.enemies = pg.sprite.Group()
         Enemy.enemies = self.enemies
         Enemy.all_sprites = self.all_sprites
-        Enemy(load_image('enemy1.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
-              movement_type='along_platform')
+        Enemy(load_image('enemy2.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
+              movement_type='idle')
+        Enemy.player = self.player
 
         self.bullets = pg.sprite.Group()
         Bullet.bullets = self.bullets
@@ -179,119 +180,89 @@ class Game:
 
 
 class AnimatedSprite(pg.sprite.Sprite):
-    def __init__(self, sheet, columns=7, rows=5, x=thickness, y=WIN_SIZE.height - thickness):
+    def __init__(self, sheet, columns=7, rows=7, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
-        self.climb_frames = []
-        self.idle_frames = []
+        # self.climb_frames = []
+        self.climb_right_frames = []
+        self.climb_left_frames = []
+        # self.idle_frames = []
+        self.idle_right_frames = []
+        self.idle_left_frames = []
         self.run_left_frames = []
         self.run_right_frames = []
-        self.jump_frames = []
+        # self.jump_frames = []
+        self.jump_right_frames = []
+        self.jump_left_frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
-        self.image = self.idle_frames[self.cur_frame]
+        self.image = self.idle_right_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
+        self.watching_dir = 'right'
+        # self.watching_right, self.watching_left = True, False
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
-        # nums = []
-        # # the size of the images of the player in different states are different
-        # # the jumping animation has seven images and one of them has the maximum size
-        # # among all the images of the player
-        # # so we get a max_rect of this size below
-        # for i in range(7):
-        #     frame_location = (self.rect.w * i, self.rect.h * 3)
-        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-        #     # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-        #     rect = frame.get_bounding_rect()
-        #     nums.append(rect)
-        # nums.sort(key=lambda x: x.size, reverse=True)
-        # max_rect = nums[0]
-        # nums = []
-        # for i in range(4):
-        #     frame_location = (self.rect.w * i, self.rect.h * 1)
-        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-        #     rect = frame.get_bounding_rect()
-        #     nums.append(rect)
-        #     # print('idle', rect.height)
-        # for i in range(4):
-        #     frame_location = (self.rect.w * i, self.rect.h * 2)
-        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-        #     rect = frame.get_bounding_rect()
-        #     nums.append(rect)
-        #     # print('run', rect.height)
-        # for i in range(7):
-        #     frame_location = (self.rect.w * i, self.rect.h * 3)
-        #     frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-        #     # frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-        #     rect = frame.get_bounding_rect()
-        #     nums.append(rect)
-        #     # print('jump', rect.height)
-        # nums.sort(key=lambda x: x.x)
-        # print(nums)
-        # min_x = nums[0].x
-        # nums.sort(key=lambda x: x.y)
-        # min_y = nums[0].y
-        # nums.sort(key=lambda x: x.width, reverse=True)
-        # max_width = nums[0].width
-        # nums.sort(key=lambda x: x.height, reverse=True)
-        # max_height = nums[0].height
-        #
-        # print(self.rect.height)
-        # max_rect = pg.Rect(min_x, min_y, max_width, max_height)
-
+        # climb_right_frames
         frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
-
         rect = frame.get_bounding_rect()
         frame = frame.subsurface(rect)
-        # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
-
         frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-        self.climb_frames.append(frame)
-        # idle row = 1, columns = 4
+        self.climb_right_frames.append(frame)
+        # climb_left_frames
+        frame = sheet.subsurface(pg.Rect((self.rect.width, 0), self.rect.size))
+        rect = frame.get_bounding_rect()
+        frame = frame.subsurface(rect)
+        frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+        self.climb_left_frames.append(frame)
+        # idle_right row = 1, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 1)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-
             rect = frame.get_bounding_rect()
             frame = frame.subsurface(rect)
-            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
-
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-            self.idle_frames.append(frame)
+            self.idle_right_frames.append(frame)
         # run_right_frames row = 2, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 2)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-
             rect = frame.get_bounding_rect()
             frame = frame.subsurface(rect)
-            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
-
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.run_right_frames.append(frame)
-        # jump_frames row = 3, columns = 7
+        # jump_right_frames row = 3, columns = 7
         for i in range(7):
             frame_location = (self.rect.w * i, self.rect.h * 3)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-
             rect = frame.get_bounding_rect()
             frame = frame.subsurface(rect)
-            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
-
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-            self.jump_frames.append(frame)
+            self.jump_right_frames.append(frame)
         # run_left_frames row = 4, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 4)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
-
             rect = frame.get_bounding_rect()
             frame = frame.subsurface(rect)
-            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
-
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.run_left_frames.append(frame)
+        # idle_left row = 5, columns = 4
+        for i in range(4):
+            frame_location = (self.rect.w * i, self.rect.h * 5)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.idle_left_frames.append(frame)
+        # jump_left_frames row = 6, columns = 7
+        for i in range(7):
+            frame_location = (self.rect.w * i, self.rect.h * 6)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.jump_left_frames.append(frame)
 
     def update(self, state):
         frames = getattr(self, f'{state}_frames')
@@ -338,13 +309,18 @@ class Player(AnimatedSprite):
         up = keys[K_w] or keys[K_UP]
         down = keys[K_s] or keys[K_DOWN]
         space = keys[K_SPACE]
-        state = 'idle'
+        # state = 'idle'
         speed_y = 0
         speed_x = 0
         directions = {'right': True, 'left': True}
         standing_on_platform = False
         standing_on_border = self.rect.bottom >= Border.bottom.rect.x
         platform_above = False
+        if right:
+            self.watching_dir = 'right'
+        elif left:
+            self.watching_dir = 'left'
+        state = f'idle_{self.watching_dir}'
         # Colliding with platforms
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
@@ -364,7 +340,7 @@ class Player(AnimatedSprite):
         for sprite in sprites:
             if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
                 self.is_climbing = True, sprite
-                state = 'climb'
+                state = f'climb_{self.watching_dir}'
         if self.is_climbing[0]:
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
                     or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE:
@@ -403,9 +379,10 @@ class Player(AnimatedSprite):
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
-                state = 'jump'
+                # state = 'jump'
+                state = f'jump_{self.watching_dir}'
         elif not self.is_climbing[0]:
-            state = 'jump'
+            state = f'jump_{self.watching_dir}'
             speed_y += self.falling_acceleration
             if self.falling_acceleration == 1:
                 self.falling_acceleration = 2
@@ -479,6 +456,7 @@ class Portal(pg.sprite.Sprite):
 class Enemy(Player):
     all_sprites = None
     enemies = None
+    player = None
 
     def __init__(self, *args, movement_type='idle', weapon='no', movement_x=0, **kwargs):
         AnimatedSprite.__init__(self, *args, **kwargs)
@@ -494,7 +472,11 @@ class Enemy(Player):
         self.counter = 0
 
     def update(self):
-        state = 'idle'
+        if self.player.rect.x < self.rect.x and self.movement_type == 'idle':
+            self.watching_dir = 'left'
+        elif self.player.rect.x > self.rect.x and self.movement_type == 'idle':
+            self.watching_dir = 'right'
+        state = f'idle_{self.watching_dir}'
         # Movement type
         if self.movement_type == 'idle':
             pass
@@ -507,10 +489,11 @@ class Enemy(Player):
                 self.rect.x -= self.speed
             elif self.dir == 'left' and self.rect.left <= self.platform.rect.left:
                 self.change_dir()
-            if self.dir == 'right':
-                state = 'run_right'
-            else:
-                state = 'run_left'
+            state = f'run_{self.watching_dir}'
+            # if self.dir == 'right':
+            #     state = 'run_right'
+            # else:
+            #     state = 'run_left'
         elif self.movement_type == 'in_range':
             if self.dir == 'right' and self.delta_x + self.speed < self.movement_x:
                 self.rect.x += self.speed
@@ -522,10 +505,11 @@ class Enemy(Player):
                 self.delta_x -= self.speed
             elif self.dir == 'left' and self.delta_x - self.speed <= -self.movement_x:
                 self.change_dir()
-            if self.dir == 'right':
-                state = 'run_right'
-            else:
-                state = 'run_left'
+            state = f'run_{self.watching_dir}'
+            # if self.dir == 'right':
+            #     state = 'run_right'
+            # else:
+            #     state = 'run_left'
         # Colliding with vertical borders
         if self.rect.x <= thickness:
             self.rect.x = thickness
