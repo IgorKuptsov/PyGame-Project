@@ -2,7 +2,27 @@ import pygame as pg
 from pygame.locals import *
 import os
 from config import *
+import sys
+from pygame import gfxdraw, K_w, K_a, K_d, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, K_F4, K_p, K_RALT, K_LALT, K_SPACE, \
+    MOUSEBUTTONDOWN, QUIT, KEYUP, KEYDOWN, K_TAB, K_v, K_h, K_BACKSPACE, K_q, K_m, K_r
 
+
+def button(text, x, y, w, h, click, inactive_colour=BLUE, active_colour=LIGHT_BLUE, text_colour=WHITE):
+    mouse = pg.mouse.get_pos()
+    return_value = False
+    if x < mouse[0] < x + w and y < mouse[1] < y + h:  # if mouse is hovering the button
+        pg.draw.rect(screen, active_colour, (x, y, w, h))
+        if click and pg.time.get_ticks() > 100: return_value = True
+    else: pg.draw.rect(screen, inactive_colour, (x, y, w, h))
+
+    text_surf, text_rect = text_objects(text, small_text, colour=text_colour)
+    text_rect.center = (int(x + w / 2), int(y + h / 2))
+    screen.blit(text_surf, text_rect)
+    return return_value
+
+def text_objects(text, font, colour=BLACK):
+    text_surface = font.render(text, True, colour)
+    return text_surface, text_surface.get_rect()
 
 def window_init():
     # получаем размеры монитора
@@ -60,8 +80,8 @@ class Game:
 
     def __init__(self):
         pg.init()
+        global screen
         self.is_running = True
-        self.screen = window_init()
         self.screen_bg = load_image('bg_test.jpg')
         self.all_sprites = pg.sprite.Group()
         # Creating the borders
@@ -80,7 +100,6 @@ class Game:
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
         # Creating objects, loading the level
-        self.load_level(1)
 
     def load_level(self, level):
         #creating level
@@ -138,6 +157,48 @@ class Game:
 
     def quit(self):
         pg.quit()
+
+
+def main_menu_setup():
+    screen.fill(WHITE)
+    text_surf, text_rect = text_objects('Название игры', menu_text)
+    text_rect.center = (int(screen_width / 2), int(screen_height / 4))
+    screen.blit(text_surf, text_rect)
+    text_surf, text_rect = text_objects(f'v{VERSION}', small_text)
+    text_rect.center = (int(screen_width * 0.98), int(screen_height * 0.98))
+    screen.blit(text_surf, text_rect)
+    pg.display.update()
+
+
+def main_menu():
+    main_menu_setup()
+    start_game = view_hs = False
+    while True:
+        click = False
+        pressed_keys = pg.key.get_pressed()
+        for event in pg.event.get():
+            alt_f4 = (event.type == KEYDOWN and (event.key == K_F4
+                      and (pressed_keys[K_LALT] or pressed_keys[K_RALT])
+                      or event.key == K_q or event.key == K_ESCAPE))
+            if event.type == QUIT or alt_f4: sys.exit()
+            elif event.type == KEYDOWN and event.key == K_SPACE: start_game = True
+            elif event.type == KEYDOWN and (event.key == K_v or event.key == K_h): view_hs = True
+            elif event.type == MOUSEBUTTONDOWN: click = True
+
+        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_4[0], click): start_game = True
+        elif button('Р Е З У Л Ь Т А Т Ы', *button_layout_4[1], click) or view_hs:
+            view_high_scores()
+            view_hs = False
+            main_menu_setup()
+        elif button('Н А С Т Р О Й К И', *button_layout_4[2], click):
+            settings_menu()
+            main_menu_setup()
+        elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_4[3], click): sys.exit()
+        if start_game:
+            while start_game: start_game = Game().run() == 'Restart'
+            main_menu_setup()
+        pg.display.update(button_layout_4)
+        clock.tick(60)
 
 
 class AnimatedSprite(pg.sprite.Sprite):
@@ -361,5 +422,22 @@ class Border(pg.sprite.Sprite):
             self.add(Border.borders_hor)
 
 
+
 if __name__ == '__main__':
-    Game().run()
+    pg.init()
+    screen = window_init()
+    screen_width, screen_height = screen.get_size()
+    BUTTON_WIDTH = int(screen_width * 0.625 // 3)
+    BUTTON_HEIGHT = int(screen_height * 5 // 81)
+    button_x_start = (screen_width - BUTTON_WIDTH) // 2
+    button_layout_4 = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
+                       (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
+                       (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
+                       (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH, BUTTON_HEIGHT)]
+    clock = pg.time.Clock()
+    menu_text = pg.font.SysFont('arial', int(110 / 1080 * screen_height))
+    large_text = pg.font.SysFont('arial', int(40 / 1080 * screen_height))
+    medium_text = pg.font.SysFont('arial', int(35 / 1440 * screen_height))
+    small_text = pg.font.SysFont('arial', int(25 / 1440 * screen_height))
+    hud_text = pg.font.SysFont('arial', int(40 / 1440 * screen_height)) 
+    main_menu()
