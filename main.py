@@ -10,6 +10,7 @@ PORTAL_SIZE = 50, 100
 BULLET_SIZE = 15, 7
 WIN_SIZE = pg.Rect(0, 0, 500, 500)
 thickness = 2
+WEAPONS_SIZES = {'gun': (50, 10)}
 
 
 def window_init():
@@ -64,6 +65,13 @@ def collided(sprite1, sprite2):
 
 
 ###############################
+def bg_music(name='Fantasy_Game_Background.mp3'):
+    fullname = os.path.join('data', name)
+    pg.mixer.music.load(fullname)
+    pg.mixer.music.set_volume(0.7)
+    pg.mixer.music.play(-1, fade_ms=5000)
+
+
 class Game:
     BG_COLOR = pg.Color('blue')
 
@@ -133,6 +141,8 @@ class Game:
         self.death_image.blit(load_image('dead_text.png', -1, 350, 100), (0, 100))
         self.death_image.blit(load_image('you_died.png', -1, 350, 75), (0, 0))
 
+        bg_music()
+
     def run(self):
         while self.is_running:
             self.events()
@@ -172,7 +182,7 @@ class Game:
             self.screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
                                                 WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
             if self.transparency <= 200:
-                self.transparency += 1
+                self.transparency += 2
         pg.display.update()
 
     def quit(self):
@@ -292,6 +302,14 @@ class Player(AnimatedSprite):
         self.count = 0
         self.falling_acceleration = 1
         self.is_alive = True
+        # sounds
+        self.cur_sound = None
+        self.running_sound = pg.mixer.Sound(os.path.join('data', 'footstep.ogg'))
+        self.running_sound.set_volume(0.5)
+        self.jump_sound = pg.mixer.Sound(os.path.join('data', 'jump.mp3'))
+        self.jump_sound.set_volume(1.5)
+        self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'ladder_sound.mp3'))
+        # self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'Fantasy_Game_Background.mp3'))
 
     def die(self):
         # return 1
@@ -359,10 +377,8 @@ class Player(AnimatedSprite):
             speed_x = self.speed
             state = 'run_right'
         elif left:
-            # TODO: state = run_left
             state = 'run_left'
         elif right:
-            # TODO: state = run_right
             state = 'run_right'
         self.rect.x += speed_x
         # y speed
@@ -379,6 +395,8 @@ class Player(AnimatedSprite):
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
+                self.jump_sound.play()
+                self.cur_sound = self.jump_sound
                 # state = 'jump'
                 state = f'jump_{self.watching_dir}'
         elif not self.is_climbing[0]:
@@ -399,7 +417,7 @@ class Player(AnimatedSprite):
                 speed_y = -self.speed
             elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) < self.speed:
                 speed_y = self.is_climbing[1].rect.y - self.rect.y - PLAYER_SIZE
-            elif down:
+            elif down and self.rect.bottom != self.is_climbing[1].rect.bottom:
                 speed_y = self.speed
 
         self.rect.y += speed_y
@@ -416,6 +434,16 @@ class Player(AnimatedSprite):
         if self.counter % 5 == 0:
             super().update(state)
         self.counter += 1
+        if 'run' in state and self.counter % 5 == 0:
+            self.running_sound.play()
+        elif 'climb' in state and speed_y and self.cur_sound != self.climbing_sound:
+            # print(self.counter)
+            self.climbing_sound.play()
+            self.cur_sound = self.climbing_sound
+        elif 'climb' in state and not speed_y or('climb' not in state and self.cur_sound == self.climbing_sound):
+            # print('aaa')
+            self.climbing_sound.stop()
+            self.cur_sound = None
 
 
 class Platform(pg.sprite.Sprite):
@@ -557,6 +585,17 @@ class Bullet(pg.sprite.Sprite):
     def __init__(self, x, y, *args, w=BULLET_SIZE[0], h=BULLET_SIZE[1], **kwargs):
         super().__init__()
         self.image = load_image('bullet.png', -1, w, h)
+        self.rect = self.image.get_rect().move(x, y)
+        self.add(self.all_sprites)
+        self.add(self.bullets)
+
+
+class Weapon(pg.sprite.Sprite):
+    all_sprites = None
+
+    def __init__(self, x, y, owner, *args, weapon_type='gun', **kwargs):
+        super().__init__()
+        self.image = load_image('gun.png', -1, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
         self.add(self.bullets)
