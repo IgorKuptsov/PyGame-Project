@@ -100,6 +100,7 @@ class Game:
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
         # Creating objects, loading the level
+        self.load_level(1)
 
     def load_level(self, level):
         #creating level
@@ -150,9 +151,9 @@ class Game:
         self.clock.tick_busy_loop(FPS)
 
     def render(self):
-        self.screen.blit(self.screen_bg, (0, 0))
-        self.all_sprites.draw(self.screen)
-        self.player.draw(self.screen)
+        screen.blit(self.screen_bg, (0, 0))
+        self.all_sprites.draw(screen)
+        self.player.draw(screen)
         pg.display.update()
 
     def quit(self):
