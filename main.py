@@ -94,9 +94,10 @@ class Game:
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
+        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498-310)
 
         Portal.all_sprites = self.all_sprites
-        self.portal = Portal(400, 2)
+        self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
         Portal.portal = self.portal
 
         # Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
@@ -126,7 +127,7 @@ class Game:
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
         self.black_surface.fill((0, 0, 0))
-        self.death_image = load_image('death_test.png', -1, 250, 100)
+        self.death_image = load_image('dead_text.png', -1, 350, 100)
 
     def run(self):
         while self.is_running:
@@ -162,10 +163,11 @@ class Game:
         self.player_sprite.draw(self.screen)
         if not self.player.is_alive:
             self.black_surface.set_alpha(self.transparency)
+            self.death_image.set_alpha(self.transparency + 50)
             self.screen.blit(self.black_surface, (0, 0))
             self.screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
-                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
-            if self.transparency <= 150:
+                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2 + 100))
+            if self.transparency <= 200:
                 self.transparency += 1
         pg.display.update()
 
@@ -230,7 +232,7 @@ class AnimatedSprite(pg.sprite.Sprite):
         # max_width = nums[0].width
         # nums.sort(key=lambda x: x.height, reverse=True)
         # max_height = nums[0].height
-#
+        #
         # print(self.rect.height)
         # max_rect = pg.Rect(min_x, min_y, max_width, max_height)
 
@@ -281,10 +283,10 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
         # this is showing sprite's rect for debugging
-        rect = pg.Surface(self.rect.size, pg.SRCALPHA)
-        rect.set_alpha(10)
-        pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
-        self.image.blit(rect, (0, 0))
+        # rect = pg.Surface(self.rect.size, pg.SRCALPHA)
+        # rect.set_alpha(10)
+        # pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
+        # self.image.blit(rect, (0, 0))
 
 
 class Player(AnimatedSprite):
@@ -430,7 +432,7 @@ class Platform(pg.sprite.Sprite):
 
     def __init__(self, x, y, w, h=PLATFORM_THICKNESS):
         super().__init__()
-        self.image = load_image('platform.png', -1, w, h)
+        self.image = load_image('platform1.png', None, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
         self.add(self.platforms)
@@ -442,7 +444,7 @@ class Ladder(pg.sprite.Sprite):
 
     def __init__(self, x, y, w, h):
         super().__init__()
-        self.image = load_image('ladder.png', None, w, h)
+        self.image = load_image('ladder2.png', -1, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
         self.add(self.ladders)
@@ -454,7 +456,7 @@ class Portal(pg.sprite.Sprite):
 
     def __init__(self, x, y, w=PORTAL_SIZE[0], h=PORTAL_SIZE[1]):
         super().__init__()
-        self.image = load_image('portal.jpg', -1, w, h)
+        self.image = load_image('portal1.png', -1, w, h)
         self.rect = self.image.get_rect().move(x, y)
         self.add(self.all_sprites)
 
