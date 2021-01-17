@@ -102,7 +102,7 @@ class Game:
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
-        Ladder(100 - LADDER_WIDTH, 10, LADDER_WIDTH, 498 - 310 + 200)
+        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498 - 310)
 
         Portal.all_sprites = self.all_sprites
         self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
@@ -422,7 +422,7 @@ class Player(AnimatedSprite):
                 speed_y = -self.speed
             elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) < self.speed:
                 speed_y = self.is_climbing[1].rect.y - self.rect.y - PLAYER_SIZE
-            elif down and self.rect.bottom != self.is_climbing[1].rect.bottom:
+            elif down:
                 speed_y = self.speed
 
         self.rect.y += speed_y
