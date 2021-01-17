@@ -94,7 +94,7 @@ class Game:
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
-        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498-310)
+        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498 - 310)
 
         Portal.all_sprites = self.all_sprites
         self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
@@ -106,17 +106,18 @@ class Game:
         Platform(200, 400, 100)
         Platform(200, 310, 100)
         # Platform(400, 500 - thickness - 100, 100, h=100)
-        Platform(500 - 100 - thickness, 423, 100)
+        Platform(500 - 200 - thickness, 423, 200)
 
         # Creating the player
         self.player_sprite = pg.sprite.Group()
         Player.player = self.player_sprite
-        self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
+        # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
+        self.player = Player(load_image('player11.png', -1), x=200, y=320)
 
         self.enemies = pg.sprite.Group()
         Enemy.enemies = self.enemies
         Enemy.all_sprites = self.all_sprites
-        Enemy(load_image('enemy.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
+        Enemy(load_image('enemy1.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
               movement_type='along_platform')
 
         self.bullets = pg.sprite.Group()
@@ -178,11 +179,12 @@ class Game:
 
 
 class AnimatedSprite(pg.sprite.Sprite):
-    def __init__(self, sheet, columns=7, rows=4, x=thickness, y=WIN_SIZE.height - thickness):
+    def __init__(self, sheet, columns=7, rows=5, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
         self.climb_frames = []
         self.idle_frames = []
-        self.run_frames = []
+        self.run_left_frames = []
+        self.run_right_frames = []
         self.jump_frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
@@ -257,7 +259,7 @@ class AnimatedSprite(pg.sprite.Sprite):
 
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.idle_frames.append(frame)
-        # run_frames row = 2, columns = 4
+        # run_right_frames row = 2, columns = 4
         for i in range(4):
             frame_location = (self.rect.w * i, self.rect.h * 2)
             frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
@@ -267,7 +269,7 @@ class AnimatedSprite(pg.sprite.Sprite):
             # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
 
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
-            self.run_frames.append(frame)
+            self.run_right_frames.append(frame)
         # jump_frames row = 3, columns = 7
         for i in range(7):
             frame_location = (self.rect.w * i, self.rect.h * 3)
@@ -279,6 +281,17 @@ class AnimatedSprite(pg.sprite.Sprite):
 
             frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
             self.jump_frames.append(frame)
+        # run_left_frames row = 4, columns = 4
+        for i in range(4):
+            frame_location = (self.rect.w * i, self.rect.h * 4)
+            frame = sheet.subsurface(pg.Rect(frame_location, self.rect.size))
+
+            rect = frame.get_bounding_rect()
+            frame = frame.subsurface(rect)
+            # frame = frame.subsurface(pg.Rect(rect.left, rect.top, *max_rect.size))
+
+            frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
+            self.run_left_frames.append(frame)
 
     def update(self, state):
         frames = getattr(self, f'{state}_frames')
@@ -365,16 +378,16 @@ class Player(AnimatedSprite):
             speed_x = 0
         elif left and directions['left']:
             speed_x = -self.speed
-            state = 'run'
+            state = 'run_left'
         elif right and directions['right']:
             speed_x = self.speed
-            state = 'run'
+            state = 'run_right'
         elif left:
             # TODO: state = run_left
-            state = 'run'
+            state = 'run_left'
         elif right:
             # TODO: state = run_right
-            state = 'run'
+            state = 'run_right'
         self.rect.x += speed_x
         # y speed
         if self.is_jumping and not platform_above:
@@ -494,7 +507,10 @@ class Enemy(Player):
                 self.rect.x -= self.speed
             elif self.dir == 'left' and self.rect.left <= self.platform.rect.left:
                 self.change_dir()
-            state = 'run'
+            if self.dir == 'right':
+                state = 'run_right'
+            else:
+                state = 'run_left'
         elif self.movement_type == 'in_range':
             if self.dir == 'right' and self.delta_x + self.speed < self.movement_x:
                 self.rect.x += self.speed
@@ -506,7 +522,10 @@ class Enemy(Player):
                 self.delta_x -= self.speed
             elif self.dir == 'left' and self.delta_x - self.speed <= -self.movement_x:
                 self.change_dir()
-            state = 'run'
+            if self.dir == 'right':
+                state = 'run_right'
+            else:
+                state = 'run_left'
         # Colliding with vertical borders
         if self.rect.x <= thickness:
             self.rect.x = thickness
