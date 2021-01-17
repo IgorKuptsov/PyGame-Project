@@ -127,7 +127,9 @@ class Game:
         self.transparency = 0
         self.black_surface = pg.Surface(self.screen.get_size())
         self.black_surface.fill((0, 0, 0))
-        self.death_image = load_image('dead_text.png', -1, 350, 100)
+        self.death_image = pg.Surface((350, 200), pg.SRCALPHA)
+        self.death_image.blit(load_image('dead_text.png', -1, 350, 100), (0, 100))
+        self.death_image.blit(load_image('you_died.png', -1, 350, 75), (0, 0))
 
     def run(self):
         while self.is_running:
@@ -166,7 +168,7 @@ class Game:
             self.death_image.set_alpha(self.transparency + 50)
             self.screen.blit(self.black_surface, (0, 0))
             self.screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
-                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2 + 100))
+                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
             if self.transparency <= 200:
                 self.transparency += 1
         pg.display.update()
