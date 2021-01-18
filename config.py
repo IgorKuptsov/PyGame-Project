@@ -1,4 +1,6 @@
 import pygame as pg
+
+
 FPS = 60
 PLAYER_SIZE = 75
 PLATFORM_THICKNESS = 10
@@ -20,3 +22,6 @@ PORTAL_SIZE = 50, 100
 BULLET_SIZE = 15, 7
 thickness = 2
 WEAPONS_SIZES = {'gun': (50, 10)}
+SOUNDS: { "background": True,
+        "player": True	
+}

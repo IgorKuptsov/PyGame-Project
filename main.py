@@ -123,7 +123,7 @@ class Game:
 
         # Creating the player
         # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
-        if get_acting_level() != "6":
+        if get_acting_level() != "7":
             self.load_level(get_acting_level())
         else:
             main_menu()
@@ -155,6 +155,7 @@ class Game:
 
         self.enemies = pg.sprite.Group()
         Enemy.enemies = self.enemies
+        Enemy.all_sprites = self.all_sprites
 
         for obj, value in objects.items():
             # Creating the player
@@ -176,7 +177,7 @@ class Game:
                 Portal.portal = self.portal
             #creating enemy
             elif "Enemy" in obj:
-                Enemy(load_image('enemy2.png', -1), *value)
+                Enemy(load_image('enemy2.png', -1), x=value['x'], y=value['y'], movement_type=value['movement_type'])
                 Enemy.player = self.player
 
     def run(self):
@@ -227,7 +228,8 @@ class Game:
         pg.quit()
 
 
-def main_menu_setup():
+
+def main_menu():
     screen.fill(WHITE)
     text_surf, text_rect = text_objects('Название игры', menu_text)
     text_rect.center = (int(screen_width / 2), int(screen_height / 4))
@@ -236,11 +238,7 @@ def main_menu_setup():
     text_rect.center = (int(screen_width * 0.98), int(screen_height * 0.98))
     screen.blit(text_surf, text_rect)
     pg.display.update()
-
-
-def main_menu():
-    main_menu_setup()
-    view_level = view_hs = False
+    view_level = False
     while True:
         click = False
         pressed_keys = pg.key.get_pressed()
@@ -250,13 +248,11 @@ def main_menu():
                       or event.key == K_q or event.key == K_ESCAPE))
             if event.type == QUIT or alt_f4: sys.exit()
             elif event.type == KEYDOWN and event.key == K_SPACE: view_level = True
-            elif event.type == KEYDOWN and (event.key == K_v or event.key == K_h): view_hs = True
             elif event.type == MOUSEBUTTONDOWN: click = True
 
         if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): view_level = True
-        elif button('Р Е З У Л Ь Т А Т Ы', *button_layout_main_menu[1], click) or view_hs:
-            view_high_scores()
-            view_hs = False
+        elif button('И Н С Т Р У К Ц И Я', *button_layout_main_menu[1], click):
+            view_instruct()
             main_menu_setup()
         elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
             settings_menu()
@@ -274,8 +270,45 @@ def main_menu():
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
+
 def settings_menu():
-    pass
+    screen.fill(WHITE)
+    text_surf, text_rect = text_objects('Настройки', MENU_TEXT)
+    text_rect.center = ((screen_width // 2), (screen_height // 4))
+    screen.blit(text_surf, text_rect)
+    pg.display.update()
+    first_run = draw_bg_toggle = draw_jump_toggle = draw_show_fps = True
+    while True:
+        click = False
+        pressed_keys = pg.key.get_pressed()
+        for event in pygame.event.get():
+            if event.type == QUIT: sys.exit()
+            elif event.type == KEYDOWN and event.key == K_ESCAPE: return
+            elif event.type == MOUSEBUTTONDOWN: click = True
+        if toggle_btn('Background Music', *button_layout_4[0], click, enabled=config['background_music'],
+                      draw_toggle=draw_bg_toggle, blit_text=first_run):
+            config['background_music'] = not config['background_music']
+            save_config()
+            draw_bg_toggle = True
+        elif toggle_btn('Jump Sound', *button_layout_4[1], click, enabled=config['jump_sound'],
+                        draw_toggle=draw_jump_toggle, blit_text=first_run):
+            config['jump_sound'] = not config['jump_sound']
+            save_config()
+            draw_jump_toggle = True
+        elif toggle_btn('Show FPS', *button_layout_4[2], click, enabled=config['show_fps'],
+                        draw_toggle=draw_show_fps, blit_text=first_run):
+            config['show_fps'] = not config['show_fps']
+            save_config()
+            draw_show_fps = True
+        elif button('B A C K', *button_layout_4[3], click): return
+        else: draw_bg_toggle = draw_jump_toggle = draw_show_fps = False
+        first_run = False
+        pygame.display.update(button_layout_4)
+        clock.tick(60)
+
+
+def view_instruct():
+    pass 
 
 
 def menu_level():
