@@ -60,6 +60,8 @@ def load_image(name, color_key=None, w=WIN_SIZE.width, h=WIN_SIZE.height):
     image = pg.transform.scale(image, (w, h))
     return image
 
+def change_level(new_level):
+    level = new_level 
 
 ################################
 def crossing_lines(a, b, c, d):
@@ -100,7 +102,7 @@ class Game:
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
         # Creating objects, loading the level
-        self.load_level(1)
+        self.load_level(acting_level)
 
     def load_level(self, level):
         #creating level
@@ -186,20 +188,23 @@ def main_menu():
             elif event.type == KEYDOWN and (event.key == K_v or event.key == K_h): view_hs = True
             elif event.type == MOUSEBUTTONDOWN: click = True
 
-        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_4[0], click): start_game = True
-        elif button('Р Е З У Л Ь Т А Т Ы', *button_layout_4[1], click) or view_hs:
+        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): start_game = True
+        elif button('Р Е З У Л Ь Т А Т Ы', *button_layout_main_menu[1], click) or view_hs:
             view_high_scores()
             view_hs = False
             main_menu_setup()
-        elif button('Н А С Т Р О Й К И', *button_layout_4[2], click):
+        elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
             settings_menu()
             main_menu_setup()
-        elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_4[3], click): sys.exit()
+        elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click): sys.exit()
         if start_game:
             while start_game: start_game = Game().run() == 'Restart'
-            main_menu_setup()
-        pg.display.update(button_layout_4)
+            while Game().is_running: main_menu_setup()
+        pg.display.update(button_layout_main_menu)
         clock.tick(60)
+
+def menu_level():
+     pass
 
 
 class AnimatedSprite(pg.sprite.Sprite):
@@ -428,13 +433,17 @@ if __name__ == '__main__':
     pg.init()
     screen = window_init()
     screen_width, screen_height = screen.get_size()
-    BUTTON_WIDTH = int(screen_width * 0.625 // 3)
-    BUTTON_HEIGHT = int(screen_height * 5 // 81)
-    button_x_start = (screen_width - BUTTON_WIDTH) // 2
-    button_layout_4 = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
-                       (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
-                       (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH, BUTTON_HEIGHT),
-                       (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH, BUTTON_HEIGHT)]
+    BUTTON_WIDTH_START = int(screen_width // 2)
+    BUTTON_HEIGHT_START = int(screen_height * 5 // 81)
+    button_x_start = (screen_width - BUTTON_WIDTH_START) // 2
+    BUTTON_WIDTH_LEVEL = int(screen_width // 4)
+    BUTTON_HEIGHT_LEVEL = int(screen_height * 5 // 81)
+    button_layout_main_menu = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
+                       (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
+                       (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
+                       (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START)]
+
+    button_layout_level_menu = [()]
     clock = pg.time.Clock()
     menu_text = pg.font.SysFont('arial', int(110 / 1080 * screen_height))
     large_text = pg.font.SysFont('arial', int(40 / 1080 * screen_height))

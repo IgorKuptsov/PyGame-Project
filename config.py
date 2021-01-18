@@ -11,5 +11,5 @@ WHITE = (0, 0, 0)
 BLUE = (33, 150, 243)
 LIGHT_BLUE = (0, 191, 255)
 BLACK = (255, 255, 255)
-
+acting_level = 1 
 VERSION = '1.1'
