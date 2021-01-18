@@ -6,29 +6,36 @@ import sys
 from pygame import gfxdraw, K_w, K_a, K_d, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, K_F4, K_p, K_RALT, K_LALT, K_SPACE, \
     MOUSEBUTTONDOWN, QUIT, KEYUP, KEYDOWN, K_TAB, K_v, K_h, K_BACKSPACE, K_q, K_m, K_r
 
+
 def get_acting_level():
     with open('levels/level_acting.txt', 'r', encoding="utf-8") as file:
         return file.read()
 
+
 def change_acting_level(level):
     with open('levels/level_acting.txt', 'w') as file:
         file.write(level)
+
+
 def button(text, x, y, w, h, click, inactive_colour=GREEN, active_colour=LIGHT_GREEN, text_colour=BLACK):
     mouse = pg.mouse.get_pos()
     return_value = False
     if x < mouse[0] < x + w and y < mouse[1] < y + h:  # if mouse is hovering the button
         pg.draw.rect(screen, active_colour, (x, y, w, h))
         if click and pg.time.get_ticks() > 100: return_value = True
-    else: pg.draw.rect(screen, inactive_colour, (x, y, w, h))
+    else:
+        pg.draw.rect(screen, inactive_colour, (x, y, w, h))
 
     text_surf, text_rect = text_objects(text, small_text, colour=text_colour)
     text_rect.center = (int(x + w / 2), int(y + h / 2))
     screen.blit(text_surf, text_rect)
     return return_value
 
+
 def text_objects(text, font, colour=BLACK):
     text_surface = font.render(text, True, colour)
     return text_surface, text_surface.get_rect()
+
 
 def window_init():
     # получаем размеры монитора
@@ -66,8 +73,10 @@ def load_image(name, color_key=None, w=WIN_SIZE.width, h=WIN_SIZE.height):
     image = pg.transform.scale(image, (w, h))
     return image
 
+
 def change_level(new_level):
-    level = new_level 
+    level = new_level
+
 
 ################################
 def crossing_lines(a, b, c, d):
@@ -114,23 +123,10 @@ class Game:
         self.clock = pg.time.Clock()
 
         # Creating objects, loading the level
-        #self.load_level(acting_level)
-
+        # self.load_level(acting_level)
 
         # Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
         # Platform(200, 500 - thickness - 100, 200, h=100)
-        
-
-        # Creating the player
-        # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
-        if get_acting_level() != "7":
-            self.load_level(get_acting_level())
-        else:
-            main_menu()
-        # self.bullets = pg.sprite.Group()
-        # Bullet.bullets = self.bullets
-        # Bullet.all_sprites = self.all_sprites
-        # Bullet(10, 10)
 
         self.transparency = 0
         self.black_surface = pg.Surface(screen.get_size())
@@ -141,8 +137,15 @@ class Game:
         if SOUNDS['background']:
             bg_music()
 
+        if get_acting_level() != "7":
+            self.load_level(get_acting_level())
+        else:
+            if SOUNDS['background']:
+                pg.mixer.music.stop()
+            main_menu()
+
     def load_level(self, level):
-        #creating level
+        # creating level
         exec(f'from levels.level{level} import *', globals())
 
         self.ladders = pg.sprite.Group()
@@ -164,18 +167,18 @@ class Game:
                 Player.player = self.player_sprite
                 # TODO: get the current skin of the player from the file
                 self.player = Player(load_image('player14.png', -1), *value)
-            #creating platform
+            # creating platform
             elif "Platform" in obj:
                 Platform(*value)
-            #creating Ladder
+            # creating Ladder
             elif 'Ladder' in obj:
                 Ladder(*value)
-            #creating portal
+            # creating portal
             elif 'Portal' in obj:
                 Portal.all_sprites = self.all_sprites
                 self.portal = Portal(*value)
                 Portal.portal = self.portal
-            #creating enemy
+            # creating enemy
             elif "Enemy" in obj:
                 Enemy(load_image('enemy2.png', -1), x=value['x'], y=value['y'], movement_type=value['movement_type'])
                 Enemy.player = self.player
@@ -195,10 +198,11 @@ class Game:
             if event.type == KEYUP:
                 if event.key == K_ESCAPE:
                     self.is_running = False
+                    pg.mixer.music.stop()
                     main_menu()
                 if event.key == K_ESCAPE and not self.player.is_alive:
                     main_menu()
-                    print('menu')
+                    # print('menu')
                     # self.is_running = False
                 if event.key == K_RETURN:
                     self.is_running = False
@@ -219,7 +223,7 @@ class Game:
             self.death_image.set_alpha(self.transparency + 50)
             screen.blit(self.black_surface, (0, 0))
             screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
-                                                WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
+                                           WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
             if self.transparency <= 200:
                 self.transparency += 2
         pg.display.update()
@@ -238,21 +242,21 @@ def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_to
     mouse = pg.mouse.get_pos()
     rect_height = h // 2
     if rect_height % 2 == 0: rect_height += 1
-    #включенное состояние кнпки 
+    # включенное состояние кнпки
     if enabled and draw_toggle:
         pg.draw.rect(screen, WHITE, (x + TOGGLE_WIDTH - h // 4, y, TOGGLE_ADJ + h, rect_height))
         pg.draw.rect(screen, enabled_color, (x + TOGGLE_WIDTH, y, TOGGLE_ADJ, rect_height))
         draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 4, enabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 4, enabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 5, WHITE)  # small inner circle
-    #выключенное состояние кнопки
+    # выключенное состояние кнопки
     elif draw_toggle:
         pg.draw.rect(screen, WHITE, (x + TOGGLE_WIDTH - h // 4, y, TOGGLE_ADJ + h, rect_height))
         pg.draw.rect(screen, disabled_color, (x + TOGGLE_WIDTH, y, TOGGLE_ADJ, rect_height))
         draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 4, disabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 4, disabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 5, WHITE)  # small inner circle
-    #написание текста для кнопки 
+    # написание текста для кнопки
     if blit_text:
         text_surf, text_rect = text_objects(text, medium_text, colour=text_colour)
         text_rect.topleft = (x, y)
@@ -275,27 +279,32 @@ def main_menu():
         pressed_keys = pg.key.get_pressed()
         for event in pg.event.get():
             alt_f4 = (event.type == KEYDOWN and (event.key == K_F4
-                      and (pressed_keys[K_LALT] or pressed_keys[K_RALT])
-                      or event.key == K_q or event.key == K_ESCAPE))
-            if event.type == QUIT or alt_f4: sys.exit()
-            elif event.type == KEYDOWN and event.key == K_SPACE: view_level = True
-            elif event.type == MOUSEBUTTONDOWN: click = True
+                                                 and (pressed_keys[K_LALT] or pressed_keys[K_RALT])
+                                                 or event.key == K_q or event.key == K_ESCAPE))
+            if event.type == QUIT or alt_f4:
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_SPACE:
+                view_level = True
+            elif event.type == MOUSEBUTTONDOWN:
+                click = True
 
-        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): view_level = True
+        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click):
+            view_level = True
         elif button('И Н С Т Р У К Ц И Я', *button_layout_main_menu[1], click):
             view_instruct()
 
         elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
             settings_menu()
             main_menu_setup()
-        elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click): sys.exit()
+        elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click):
+            sys.exit()
         if view_level:
             level = menu_level()
             if level:
                 change_acting_level(str(level))
-                screen.fill(WHITE) 
+                screen.fill(WHITE)
                 if not Game().run():
-                     main_menu()
+                    main_menu()
             else:
                 main_menu()
         pg.display.update(button_layout_main_menu)
@@ -314,9 +323,12 @@ def settings_menu():
         click = False
         pressed_keys = pg.key.get_pressed()
         for event in pg.event.get():
-            if event.type == QUIT: sys.exit()
-            elif event.type == KEYDOWN and event.key == K_ESCAPE: return
-            elif event.type == MOUSEBUTTONDOWN: click = True
+            if event.type == QUIT:
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                return
+            elif event.type == MOUSEBUTTONDOWN:
+                click = True
         if toggle_btn('Музыка', *button_layout_main_menu[0], click, enabled=SOUNDS['background'],
                       draw_toggle=draw_bg_toggle, blit_text=first_run):
             SOUNDS['background'] = not SOUNDS['background']
@@ -325,14 +337,15 @@ def settings_menu():
                         draw_toggle=draw_jump_toggle, blit_text=first_run):
             SOUNDS['player'] = not SOUNDS['player']
             draw_player_toggle = True
-        elif button("Н А З А Д", *button_layout_main_menu[3], click): main_menu()
-        
+        elif button("Н А З А Д", *button_layout_main_menu[3], click):
+            main_menu()
+
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
 
 def view_instruct():
-    pass 
+    pass
 
 
 def menu_level():
@@ -344,17 +357,26 @@ def menu_level():
     while True:
         pressed_keys = pg.key.get_pressed()
         for event in pg.event.get():
-            if event.type == QUIT: sys.exit()
-            elif event.type == MOUSEBUTTONDOWN: click = True
-        if button("1", *button_layout_level_menu[0], click): return 1
-        elif button("2", *button_layout_level_menu[1], click): return 2
-        elif button("3", *button_layout_level_menu[2], click): return 3
-        elif button("4", *button_layout_level_menu[3], click): return 4
-        elif button("5", *button_layout_level_menu[4], click): return 5
-        elif button("6", *button_layout_level_menu[5], click): return 6
-        elif button('Н А З А Д', *button_layout_level_menu[6], click): return 0    
+            if event.type == QUIT:
+                sys.exit()
+            elif event.type == MOUSEBUTTONDOWN:
+                click = True
+        if button("1", *button_layout_level_menu[0], click):
+            return 1
+        elif button("2", *button_layout_level_menu[1], click):
+            return 2
+        elif button("3", *button_layout_level_menu[2], click):
+            return 3
+        elif button("4", *button_layout_level_menu[3], click):
+            return 4
+        elif button("5", *button_layout_level_menu[4], click):
+            return 5
+        elif button("6", *button_layout_level_menu[5], click):
+            return 6
+        elif button('Н А З А Д', *button_layout_level_menu[6], click):
+            return 0
         pg.display.update(button_layout_level_menu)
-        clock.tick(60) 
+        clock.tick(60)
 
 
 class AnimatedSprite(pg.sprite.Sprite):
@@ -455,6 +477,7 @@ class AnimatedSprite(pg.sprite.Sprite):
 
 class Player(AnimatedSprite):
     player = None
+
     # hard_blocks = None
     def __init__(self, *args, **kwargs):
 
@@ -486,6 +509,8 @@ class Player(AnimatedSprite):
         if SOUNDS['background']:
             pg.mixer.music.stop()
             self.death_sound.play()
+        if SOUNDS['player']:
+            self.climbing_sound.stop()
 
     def update(self, *args):
         # Colliding with enemies
@@ -533,7 +558,8 @@ class Player(AnimatedSprite):
                 state = f'climb_{self.watching_dir}'
         if self.is_climbing[0]:
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
+                1].rect.bottom:
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
@@ -541,7 +567,6 @@ class Player(AnimatedSprite):
             pg.display.update()
             change_acting_level(str(int(get_acting_level()) + 1))
             Game().run()
-            
 
         # x speed
         if left == right:
@@ -571,7 +596,7 @@ class Player(AnimatedSprite):
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
-                if SOUNDS['player']:    
+                if SOUNDS['player']:
                     self.jump_sound.play()
                     self.cur_sound = self.jump_sound
                 # state = 'jump'
@@ -782,7 +807,7 @@ if __name__ == '__main__':
     pg.init()
     screen = window_init()
     screen_width, screen_height = screen.get_size()
-    print(screen_width)
+    # print(screen_width)
     BUTTON_WIDTH_START = int(screen_width // 2)
     BUTTON_HEIGHT_START = int(screen_height * 5 // 81)
     button_x_start = (screen_width - BUTTON_WIDTH_START) // 2
@@ -791,17 +816,17 @@ if __name__ == '__main__':
     TOGGLE_WIDTH = int(BUTTON_WIDTH_START * 0.875)
     TOGGLE_ADJ = int(BUTTON_WIDTH_START * 0.075)
     button_layout_main_menu = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
-                       (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
-                       (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
-                       (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START)]
+                               (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
+                               (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
+                               (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START)]
 
-    button_layout_level_menu = [(10, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (170, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (330, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (10, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (170, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (330, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (170, screen_height * 7 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL)]
+    button_layout_level_menu = [(10, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (170, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (330, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (10, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (170, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (330, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL),
+                                (170, screen_height * 7 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL)]
     clock = pg.time.Clock()
     menu_text = pg.font.SysFont('arial', int(110 / 1080 * screen_height))
     large_text = pg.font.SysFont('arial', int(40 / 1080 * screen_height))
