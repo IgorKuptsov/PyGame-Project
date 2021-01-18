@@ -204,7 +204,7 @@ class Game:
                     main_menu()
                     # print('menu')
                     # self.is_running = False
-                if event.key == K_RETURN:
+                if event.key == K_RETURN  and not self.player.is_alive:
                     self.is_running = False
                     Game().run()
 
@@ -558,8 +558,7 @@ class Player(AnimatedSprite):
                 state = f'climb_{self.watching_dir}'
         if self.is_climbing[0]:
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
-                1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
