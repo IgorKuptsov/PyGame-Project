@@ -7,7 +7,7 @@ from pygame import gfxdraw, K_w, K_a, K_d, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, K_F4
     MOUSEBUTTONDOWN, QUIT, KEYUP, KEYDOWN, K_TAB, K_v, K_h, K_BACKSPACE, K_q, K_m, K_r
 
 
-def button(text, x, y, w, h, click, inactive_colour=BLUE, active_colour=LIGHT_BLUE, text_colour=WHITE):
+def button(text, x, y, w, h, click, inactive_colour=GREEN, active_colour=LIGHT_GREEN, text_colour=BLACK):
     mouse = pg.mouse.get_pos()
     return_value = False
     if x < mouse[0] < x + w and y < mouse[1] < y + h:  # if mouse is hovering the button
@@ -26,7 +26,7 @@ def text_objects(text, font, colour=BLACK):
 
 def window_init():
     # получаем размеры монитора
-    # в pygame неудобно получать размер монитора, поэтому воспользуемся
+    # в pg неудобно получать размер монитора, поэтому воспользуемся
     # другой библиотекой
     from tkinter import Tk
     temp = Tk()
@@ -138,7 +138,7 @@ class Game:
             self.events()
             self.update()
             self.render()
-        self.quit()
+        return False
 
     def events(self):
         for event in pg.event.get():
@@ -175,7 +175,7 @@ def main_menu_setup():
 
 def main_menu():
     main_menu_setup()
-    start_game = view_hs = False
+    view_level = view_hs = False
     while True:
         click = False
         pressed_keys = pg.key.get_pressed()
@@ -184,11 +184,11 @@ def main_menu():
                       and (pressed_keys[K_LALT] or pressed_keys[K_RALT])
                       or event.key == K_q or event.key == K_ESCAPE))
             if event.type == QUIT or alt_f4: sys.exit()
-            elif event.type == KEYDOWN and event.key == K_SPACE: start_game = True
+            elif event.type == KEYDOWN and event.key == K_SPACE: view_level = True
             elif event.type == KEYDOWN and (event.key == K_v or event.key == K_h): view_hs = True
             elif event.type == MOUSEBUTTONDOWN: click = True
 
-        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): start_game = True
+        if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): view_level = True
         elif button('Р Е З У Л Ь Т А Т Ы', *button_layout_main_menu[1], click) or view_hs:
             view_high_scores()
             view_hs = False
@@ -197,14 +197,28 @@ def main_menu():
             settings_menu()
             main_menu_setup()
         elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click): sys.exit()
-        if start_game:
-            while start_game: start_game = Game().run() == 'Restart'
-            while Game().is_running: main_menu_setup()
+        if view_level:
+            acting_level = menu_level() 
+            Game().run()
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
+def settings_menu():
+    pass
+
+
 def menu_level():
-     pass
+    screen.fill(WHITE)
+    while True:
+        pressed_keys = pg.key.get_pressed()
+        for event in pg.event.get():
+            if event.type == QUIT: sys.exit()
+            elif event.type == MOUSEBUTTONDOWN: click = True
+        click = False
+        if button("1", *button_layout_level_menu[0], click): return 1
+        elif button("2", *button_layout_level_menu[1], click): return 2
+        pg.display.update(button_layout_level_menu)
+        clock.tick(60) 
 
 
 class AnimatedSprite(pg.sprite.Sprite):
@@ -443,11 +457,11 @@ if __name__ == '__main__':
                        (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
                        (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START)]
 
-    button_layout_level_menu = [()]
+    button_layout_level_menu = [(10, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (150, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL)]
     clock = pg.time.Clock()
     menu_text = pg.font.SysFont('arial', int(110 / 1080 * screen_height))
     large_text = pg.font.SysFont('arial', int(40 / 1080 * screen_height))
     medium_text = pg.font.SysFont('arial', int(35 / 1440 * screen_height))
     small_text = pg.font.SysFont('arial', int(25 / 1440 * screen_height))
-    hud_text = pg.font.SysFont('arial', int(40 / 1440 * screen_height)) 
     main_menu()
