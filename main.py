@@ -111,41 +111,14 @@ class Game:
         # Creating objects, loading the level
         #self.load_level(acting_level)
 
-        self.platforms = pg.sprite.Group()
-        Platform.platforms = self.platforms
-        Platform.all_sprites = self.all_sprites
-
-        self.ladders = pg.sprite.Group()
-        Ladder.ladders = self.ladders
-        Ladder.all_sprites = self.all_sprites
-        Ladder(100 - LADDER_WIDTH, 310, LADDER_WIDTH, 498 - 310)
-
-        Portal.all_sprites = self.all_sprites
-        self.portal = Portal(200 - PORTAL_SIZE[0], 310 - PORTAL_SIZE[1])
-        Portal.portal = self.portal
-
 
         # Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
         # Platform(200, 500 - thickness - 100, 200, h=100)
-        Platform(100, 310, 100, h=100)
-        Platform(200, 400, 100)
-        Platform(200, 310, 100)
-        # Platform(400, 500 - thickness - 100, 100, h=100)
-        Platform(500 - 200 - thickness, 423, 200)
+        
 
         # Creating the player
-        self.player_sprite = pg.sprite.Group()
-        Player.player = self.player_sprite
         # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
-        self.player = Player(load_image('player14.png', -1), x=200, y=320)
-
-        self.enemies = pg.sprite.Group()
-        Enemy.enemies = self.enemies
-        Enemy.all_sprites = self.all_sprites
-        Enemy(load_image('enemy2.png', -1), x=500 - 100 - 2, y=423 - PLAYER_SIZE,
-              movement_type='idle')
-        Enemy.player = self.player
-
+        self.load_level(acting_level)
         # self.bullets = pg.sprite.Group()
         # Bullet.bullets = self.bullets
         # Bullet.all_sprites = self.all_sprites
@@ -163,31 +136,41 @@ class Game:
     def load_level(self, level):
         #creating level
         exec(f'from levels.level{level} import *', globals())
+
         self.ladders = pg.sprite.Group()
         Ladder.ladders = self.ladders
         Ladder.all_sprites = self.all_sprites
+
         self.platforms = pg.sprite.Group()
         Platform.platforms = self.platforms
         Platform.all_sprites = self.all_sprites
+
+        self.enemies = pg.sprite.Group()
+        Enemy.enemies = self.enemies
+
         for obj, value in objects.items():
+            # Creating the player
             if obj == 'Player':
-                self.player = pg.sprite.Group()
-                Player.player = self.player
+                self.player_sprite = pg.sprite.Group()
+                Player.player = self.player_sprite
                 # TODO: get the current skin of the player from the file
-                Player(load_image('animated_player_test.png', -1), *value)
+                self.player = Player(load_image('player14.png', -1), *value)
+            #creating platform
             elif "Platform" in obj:
                 Platform(*value)
+            #creating Ladder
             elif 'Ladder' in obj:
                 Ladder(*value)
+            #creating portal
             elif 'Portal' in obj:
                 Portal.all_sprites = self.all_sprites
                 self.portal = Portal(*value)
                 Portal.portal = self.portal
-            # TODO: add enemies
-            '''
+            #creating enemy
             elif "Enemy" in obj:
-                
-            '''
+                Enemy(load_image('enemy2.png', -1), *value)
+                Enemy.player = self.player
+
     def run(self):
         while self.is_running:
             self.events()
@@ -203,11 +186,10 @@ class Game:
                 if event.key == K_ESCAPE:
                     self.is_running = False
                 if event.key == K_ESCAPE and not self.player.is_alive:
-                    # TODO: выйти в меню выбора уровней
+                    main_menu()
                     print('menu')
                     # self.is_running = False
                 if event.key == K_RETURN:
-                    # TODO: Загрузить текущий уровень
                     print('reloading current level')
 
     def update(self):
@@ -270,7 +252,8 @@ def main_menu():
             main_menu_setup()
         elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click): sys.exit()
         if view_level:
-            acting_level = menu_level() 
+            acting_level = menu_level()
+            screen.fill(WHITE) 
             Game().run()
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
