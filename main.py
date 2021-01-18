@@ -254,7 +254,8 @@ def main_menu():
         if view_level:
             acting_level = menu_level()
             screen.fill(WHITE) 
-            Game().run()
+            if not Game().run():
+                main_menu()
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
@@ -379,7 +380,7 @@ class Player(AnimatedSprite):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-
+        global acting_level
         self.add(Player.player)
         self.speed = 7
         self.is_jumping = False
@@ -457,8 +458,7 @@ class Player(AnimatedSprite):
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
-            # TODO: смена уровня
-            pass
+            acting_level += 1
         # x speed
         if left == right:
             speed_x = 0
