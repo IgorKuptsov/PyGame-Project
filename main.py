@@ -6,8 +6,13 @@ import sys
 from pygame import gfxdraw, K_w, K_a, K_d, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, K_F4, K_p, K_RALT, K_LALT, K_SPACE, \
     MOUSEBUTTONDOWN, QUIT, KEYUP, KEYDOWN, K_TAB, K_v, K_h, K_BACKSPACE, K_q, K_m, K_r
 
+def get_acting_level():
+    with open('levels/level_acting.txt', 'r', encoding="utf-8") as file:
+        return file.read()
 
-
+def change_acting_level(level):
+    with open('levels/level_acting.txt', 'w') as file:
+        file.write(level)
 def button(text, x, y, w, h, click, inactive_colour=GREEN, active_colour=LIGHT_GREEN, text_colour=BLACK):
     mouse = pg.mouse.get_pos()
     return_value = False
@@ -118,7 +123,10 @@ class Game:
 
         # Creating the player
         # self.player = Player(load_image('animated_player_test2.png', -1), x=200, y=320)
-        self.load_level(acting_level)
+        if get_acting_level() != "6":
+            self.load_level(get_acting_level())
+        else:
+            main_menu()
         # self.bullets = pg.sprite.Group()
         # Bullet.bullets = self.bullets
         # Bullet.all_sprites = self.all_sprites
@@ -182,15 +190,18 @@ class Game:
         for event in pg.event.get():
             if event.type == QUIT:
                 self.is_running = False
+                main_menu()
             if event.type == KEYUP:
                 if event.key == K_ESCAPE:
                     self.is_running = False
+                    main_menu()
                 if event.key == K_ESCAPE and not self.player.is_alive:
                     main_menu()
                     print('menu')
                     # self.is_running = False
                 if event.key == K_RETURN:
-                    print('reloading current level')
+                    self.is_running = False
+                    Game().run()
 
     def update(self):
         if self.player.is_alive:
@@ -252,9 +263,13 @@ def main_menu():
             main_menu_setup()
         elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click): sys.exit()
         if view_level:
-            acting_level = menu_level()
-            screen.fill(WHITE) 
-            if not Game().run():
+            level = menu_level()
+            if level:
+                change_acting_level(str(level))
+                screen.fill(WHITE) 
+                if not Game().run():
+                     main_menu()
+            else:
                 main_menu()
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
@@ -265,6 +280,9 @@ def settings_menu():
 
 def menu_level():
     screen.fill(WHITE)
+    text_surf, text_rect = text_objects('Уровень', menu_text)
+    text_rect.center = (int(screen_width / 2), int(screen_height / 4))
+    screen.blit(text_surf, text_rect)
     click = False
     while True:
         pressed_keys = pg.key.get_pressed()
@@ -273,6 +291,11 @@ def menu_level():
             elif event.type == MOUSEBUTTONDOWN: click = True
         if button("1", *button_layout_level_menu[0], click): return 1
         elif button("2", *button_layout_level_menu[1], click): return 2
+        elif button("3", *button_layout_level_menu[2], click): return 3
+        elif button("4", *button_layout_level_menu[3], click): return 4
+        elif button("5", *button_layout_level_menu[4], click): return 5
+        elif button("6", *button_layout_level_menu[5], click): return 6
+        elif button('Н А З А Д', *button_layout_level_menu[6], click): return 0    
         pg.display.update(button_layout_level_menu)
         clock.tick(60) 
 
@@ -375,12 +398,10 @@ class AnimatedSprite(pg.sprite.Sprite):
 
 class Player(AnimatedSprite):
     player = None
-
     # hard_blocks = None
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        global acting_level
         self.add(Player.player)
         self.speed = 7
         self.is_jumping = False
@@ -458,7 +479,12 @@ class Player(AnimatedSprite):
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
-            acting_level += 1
+            Game().is_running = False
+            pg.display.update()
+            change_acting_level(str(int(get_acting_level()) + 1))
+            Game().run()
+            
+
         # x speed
         if left == right:
             speed_x = 0
@@ -695,10 +721,11 @@ if __name__ == '__main__':
     pg.init()
     screen = window_init()
     screen_width, screen_height = screen.get_size()
+    print(screen_width)
     BUTTON_WIDTH_START = int(screen_width // 2)
     BUTTON_HEIGHT_START = int(screen_height * 5 // 81)
     button_x_start = (screen_width - BUTTON_WIDTH_START) // 2
-    BUTTON_WIDTH_LEVEL = int(screen_width // 4)
+    BUTTON_WIDTH_LEVEL = int(screen_width * 0.3)
     BUTTON_HEIGHT_LEVEL = int(screen_height * 5 // 81)
     button_layout_main_menu = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
                        (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
@@ -706,7 +733,12 @@ if __name__ == '__main__':
                        (button_x_start, screen_height * 8 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START)]
 
     button_layout_level_menu = [(10, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
-                               (150, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL)]
+                               (170, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (330, screen_height * 5 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (10, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (170, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (330, screen_height * 6 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL), 
+                               (170, screen_height * 7 // 13, BUTTON_WIDTH_LEVEL, BUTTON_HEIGHT_LEVEL)]
     clock = pg.time.Clock()
     menu_text = pg.font.SysFont('arial', int(110 / 1080 * screen_height))
     large_text = pg.font.SysFont('arial', int(40 / 1080 * screen_height))
