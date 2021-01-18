@@ -209,12 +209,12 @@ def settings_menu():
 
 def menu_level():
     screen.fill(WHITE)
+    click = False
     while True:
         pressed_keys = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == QUIT: sys.exit()
             elif event.type == MOUSEBUTTONDOWN: click = True
-        click = False
         if button("1", *button_layout_level_menu[0], click): return 1
         elif button("2", *button_layout_level_menu[1], click): return 2
         pg.display.update(button_layout_level_menu)
