@@ -22,6 +22,7 @@ PORTAL_SIZE = 50, 100
 BULLET_SIZE = 15, 7
 thickness = 2
 WEAPONS_SIZES = {'gun': (50, 10)}
-SOUNDS: { "background": True,
+SOUNDS = { "background": True,
         "player": True	
 }
+GREY = (211,211,211)

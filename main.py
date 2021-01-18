@@ -138,8 +138,8 @@ class Game:
         self.death_image = pg.Surface((350, 200), pg.SRCALPHA)
         self.death_image.blit(load_image('dead_text.png', -1, 350, 100), (0, 100))
         self.death_image.blit(load_image('you_died.png', -1, 350, 75), (0, 0))
-
-        bg_music()
+        if SOUNDS['background']:
+            bg_music()
 
     def load_level(self, level):
         #creating level
@@ -228,6 +228,37 @@ class Game:
         pg.quit()
 
 
+def draw_circle(surface, x, y, radius, color):
+    gfxdraw.aacircle(surface, x, y, radius, color)
+    gfxdraw.filled_circle(surface, x, y, radius, color)
+
+
+def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_toggle=True, blit_text=True,
+               enabled_color=LIGHT_GREEN, disabled_color=GREY):
+    mouse = pg.mouse.get_pos()
+    rect_height = h // 2
+    if rect_height % 2 == 0: rect_height += 1
+    #включенное состояние кнпки 
+    if enabled and draw_toggle:
+        pg.draw.rect(screen, WHITE, (x + TOGGLE_WIDTH - h // 4, y, TOGGLE_ADJ + h, rect_height))
+        pg.draw.rect(screen, enabled_color, (x + TOGGLE_WIDTH, y, TOGGLE_ADJ, rect_height))
+        draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 4, enabled_color)
+        draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 4, enabled_color)
+        draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 5, WHITE)  # small inner circle
+    #выключенное состояние кнопки
+    elif draw_toggle:
+        pg.draw.rect(screen, WHITE, (x + TOGGLE_WIDTH - h // 4, y, TOGGLE_ADJ + h, rect_height))
+        pg.draw.rect(screen, disabled_color, (x + TOGGLE_WIDTH, y, TOGGLE_ADJ, rect_height))
+        draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 4, disabled_color)
+        draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 4, disabled_color)
+        draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 5, WHITE)  # small inner circle
+    #написание текста для кнопки 
+    if blit_text:
+        text_surf, text_rect = text_objects(text, medium_text, colour=text_colour)
+        text_rect.topleft = (x, y)
+        screen.blit(text_surf, text_rect)
+    return x < mouse[0] < x + w and y < mouse[1] < y + h and click and pg.time.get_ticks() > 100
+
 
 def main_menu():
     screen.fill(WHITE)
@@ -253,7 +284,7 @@ def main_menu():
         if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click): view_level = True
         elif button('И Н С Т Р У К Ц И Я', *button_layout_main_menu[1], click):
             view_instruct()
-            main_menu_setup()
+
         elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
             settings_menu()
             main_menu_setup()
@@ -272,38 +303,31 @@ def main_menu():
 
 
 def settings_menu():
+    global SOUNDS
     screen.fill(WHITE)
-    text_surf, text_rect = text_objects('Настройки', MENU_TEXT)
+    text_surf, text_rect = text_objects('Настройки', menu_text)
     text_rect.center = ((screen_width // 2), (screen_height // 4))
     screen.blit(text_surf, text_rect)
     pg.display.update()
-    first_run = draw_bg_toggle = draw_jump_toggle = draw_show_fps = True
+    first_run = draw_bg_toggle = draw_jump_toggle = draw_player_toggle = True
     while True:
         click = False
         pressed_keys = pg.key.get_pressed()
-        for event in pygame.event.get():
+        for event in pg.event.get():
             if event.type == QUIT: sys.exit()
             elif event.type == KEYDOWN and event.key == K_ESCAPE: return
             elif event.type == MOUSEBUTTONDOWN: click = True
-        if toggle_btn('Background Music', *button_layout_4[0], click, enabled=config['background_music'],
+        if toggle_btn('Музыка', *button_layout_main_menu[0], click, enabled=SOUNDS['background'],
                       draw_toggle=draw_bg_toggle, blit_text=first_run):
-            config['background_music'] = not config['background_music']
-            save_config()
+            SOUNDS['background'] = not SOUNDS['background']
             draw_bg_toggle = True
-        elif toggle_btn('Jump Sound', *button_layout_4[1], click, enabled=config['jump_sound'],
+        elif toggle_btn('SFX', *button_layout_main_menu[1], click, enabled=SOUNDS['player'],
                         draw_toggle=draw_jump_toggle, blit_text=first_run):
-            config['jump_sound'] = not config['jump_sound']
-            save_config()
-            draw_jump_toggle = True
-        elif toggle_btn('Show FPS', *button_layout_4[2], click, enabled=config['show_fps'],
-                        draw_toggle=draw_show_fps, blit_text=first_run):
-            config['show_fps'] = not config['show_fps']
-            save_config()
-            draw_show_fps = True
-        elif button('B A C K', *button_layout_4[3], click): return
-        else: draw_bg_toggle = draw_jump_toggle = draw_show_fps = False
-        first_run = False
-        pygame.display.update(button_layout_4)
+            SOUNDS['player'] = not SOUNDS['player']
+            draw_player_toggle = True
+        elif button("Н А З А Д", *button_layout_main_menu[3], click): main_menu()
+        
+        pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
 
@@ -459,8 +483,9 @@ class Player(AnimatedSprite):
     def die(self):
         # return 1
         self.is_alive = False
-        pg.mixer.music.stop()
-        self.death_sound.play()
+        if SOUNDS['background']:
+            pg.mixer.music.stop()
+            self.death_sound.play()
 
     def update(self, *args):
         # Colliding with enemies
@@ -546,8 +571,9 @@ class Player(AnimatedSprite):
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
-                self.jump_sound.play()
-                self.cur_sound = self.jump_sound
+                if SOUNDS['player']:    
+                    self.jump_sound.play()
+                    self.cur_sound = self.jump_sound
                 # state = 'jump'
                 state = f'jump_{self.watching_dir}'
         elif not self.is_climbing[0] or (self.is_climbing[0] and self.is_jumping):
@@ -586,13 +612,15 @@ class Player(AnimatedSprite):
             super().update(state)
         self.counter += 1
         if 'run' in state and self.counter % 5 == 0 and not self.is_climbing[0] and not self.is_jumping:
-            self.running_sound.play()
+            if SOUNDS['player']: self.running_sound.play()
         elif 'climb' in state and speed_y and self.cur_sound != self.climbing_sound:
-            self.climbing_sound.play()
-            self.cur_sound = self.climbing_sound
+            if SOUNDS["player"]:
+                self.climbing_sound.play()
+                self.cur_sound = self.climbing_sound
         elif 'climb' in state and not speed_y or ('climb' not in state and self.cur_sound == self.climbing_sound):
-            self.climbing_sound.stop()
-            self.cur_sound = None
+            if SOUNDS["player"]:
+                self.climbing_sound.stop()
+                self.cur_sound = None
 
 
 class Platform(pg.sprite.Sprite):
@@ -760,6 +788,8 @@ if __name__ == '__main__':
     button_x_start = (screen_width - BUTTON_WIDTH_START) // 2
     BUTTON_WIDTH_LEVEL = int(screen_width * 0.3)
     BUTTON_HEIGHT_LEVEL = int(screen_height * 5 // 81)
+    TOGGLE_WIDTH = int(BUTTON_WIDTH_START * 0.875)
+    TOGGLE_ADJ = int(BUTTON_WIDTH_START * 0.075)
     button_layout_main_menu = [(button_x_start, screen_height * 5 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
                        (button_x_start, screen_height * 6 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
                        (button_x_start, screen_height * 7 // 13, BUTTON_WIDTH_START, BUTTON_HEIGHT_START),
