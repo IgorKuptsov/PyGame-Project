@@ -705,6 +705,7 @@ class Portal(pg.sprite.Sprite):
         self.add(self.all_sprites)
 
 
+# Класс врага
 class Enemy(Player):
     all_sprites = None
     enemies = None
@@ -713,23 +714,29 @@ class Enemy(Player):
     def __init__(self, *args, movement_type='idle', weapon='no', movement_x=0, **kwargs):
         AnimatedSprite.__init__(self, *args, **kwargs)
         self.speed = 3
+        # movement_type отвечает за то, будет ли враг стоять на месте, двигаться вдоль платформы
+        # или двигаеться вдоль отрезка длиной movement_x
         self.movement_type = movement_type
+        # оржие для дальнейшей разработки
         self.weapon = weapon
+        # начальное направление движения врага
         self.dir = 'right'
         self.enemy_platform()
         self.movement_x = movement_x
+        # смещение врага относительно точки его появления
         self.delta_x = 0
         self.add(self.all_sprites)
         self.add(self.enemies)
         self.counter = 0
 
     def update(self):
+        # враг поворачивается в сторону игрока
         if self.player.rect.x < self.rect.x and self.movement_type == 'idle':
             self.watching_dir = 'left'
         elif self.player.rect.x > self.rect.x and self.movement_type == 'idle':
             self.watching_dir = 'right'
         state = f'idle_{self.watching_dir}'
-        # Movement type
+        # В зависимости от типа движения врага, изменяем его кординаты
         if self.movement_type == 'idle':
             pass
         elif self.movement_type == 'along_platform':
@@ -754,29 +761,33 @@ class Enemy(Player):
             elif self.dir == 'left' and self.delta_x - self.speed <= -self.movement_x:
                 self.change_dir()
             state = f'run_{self.watching_dir}'
-        # Colliding with vertical borders
+        # Проверяем, не вышел ли враг за границы
+        # Если это так, то перемещаем врага к границе
         if self.rect.x <= thickness:
             self.rect.x = thickness
         elif self.rect.x + PLAYER_SIZE >= WIN_SIZE.width - thickness:
             self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
-        # Colliding with horizontal borders
         if self.rect.y + PLAYER_SIZE >= WIN_SIZE.height:
             self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
         elif self.rect.y <= thickness:
             self.rect.y = thickness
+        # Каждые 5 кадров обновляем картинку врага
         if self.counter % 5 == 0:
             AnimatedSprite.update(self, state)
         self.counter += 1
 
+    # Если враг двигается вдоль платформы, то "привязвыаем" к нему эту платформу
     def enemy_platform(self):
         if self.movement_type == 'along_platform':
             platform = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)[0]
             self.platform = platform
 
+    # Изменение направления движения
     def change_dir(self):
         self.dir = 'left' if self.dir == 'right' else 'right'
 
 
+# Класс границы
 class Border(pg.sprite.Sprite):
     all_sprites = None
     borders_hor = None
@@ -794,6 +805,7 @@ class Border(pg.sprite.Sprite):
             self.add(Border.borders_hor)
 
 
+# Класс пули для дальнейшей разработки
 class Bullet(pg.sprite.Sprite):
     all_sprites = None
     bullets = None
