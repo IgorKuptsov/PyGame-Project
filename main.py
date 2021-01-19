@@ -278,7 +278,8 @@ def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_to
 
 def main_menu():
     screen.fill(WHITE)
-    text_surf, text_rect = text_objects('Название игры', menu_text)
+    text_surf, text_rect = text_objects('Платформы и лестницы', menu_text)
+    # text_surf, text_rect = text_objects('Название игры', menu_text)
     text_rect.center = (int(screen_width / 2), int(screen_height / 4))
     screen.blit(text_surf, text_rect)
     text_surf, text_rect = text_objects(f'v{VERSION}', small_text)
@@ -561,8 +562,8 @@ class Player(AnimatedSprite):
                 directions['right'] = False
             elif sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
                 directions['left'] = False
-            if (sprite.rect.top <= self.rect.top <= sprite.rect.bottom < self.rect.bottom) \
-                    or (self.rect.top < sprite.rect.top and self.rect.bottom > sprite.rect.bottom) \
+            if (sprite.rect.top <= self.rect.top <= sprite.rect.bottom <= self.rect.bottom) \
+                    or (self.rect.top <= sprite.rect.top and self.rect.bottom >= sprite.rect.bottom) \
                     and self.is_jumping:
                 platform_above = True
         # Colliding with ladders
