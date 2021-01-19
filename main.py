@@ -123,10 +123,6 @@ class Game:
         self.clock = pg.time.Clock()
 
         # Creating objects, loading the level
-        # self.load_level(acting_level)
-
-        # Platform(200, 400 - thickness - PLATFORM_THICKNESS, 200)
-        # Platform(200, 500 - thickness - 100, 200, h=100)
 
         self.transparency = 0
         self.black_surface = pg.Surface(screen.get_size())
