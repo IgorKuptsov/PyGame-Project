@@ -134,15 +134,18 @@ class Game:
         self.death_image = pg.Surface((350, 200), pg.SRCALPHA)
         self.death_image.blit(load_image('dead_text.png', -1, 350, 100), (0, 100))
         self.death_image.blit(load_image('you_died.png', -1, 350, 75), (0, 0))
+        self.victory_image = pg.Surface((350, 200), pg.SRCALPHA)
+        self.victory_image.blit(load_image('victory_text.png', -1, 250, 50), (50, 100))
+        self.victory_image.blit(load_image('victory.png', -1, 300, 75), (25, 0))
         if SOUNDS['background']:
             bg_music()
 
         if get_acting_level() != "7":
             self.load_level(get_acting_level())
-        else:
-            if SOUNDS['background']:
-                pg.mixer.music.stop()
-            main_menu()
+        # else:
+        #     if SOUNDS['background']:
+        #         pg.mixer.music.stop()
+        #     main_menu()
 
     def load_level(self, level):
         # creating level
@@ -165,7 +168,6 @@ class Game:
             if obj == 'Player':
                 self.player_sprite = pg.sprite.Group()
                 Player.player = self.player_sprite
-                # TODO: get the current skin of the player from the file
                 self.player = Player(load_image('player14.png', -1), *value)
             # creating platform
             elif "Platform" in obj:
@@ -204,12 +206,14 @@ class Game:
                     main_menu()
                     # print('menu')
                     # self.is_running = False
-                if event.key == K_RETURN  and not self.player.is_alive:
+                if event.key == K_RETURN and not self.player.is_alive:
                     self.is_running = False
                     Game().run()
+                if event.key == K_RETURN and self.player.victory:
+                    main_menu()
 
     def update(self):
-        if self.player.is_alive:
+        if self.player.is_alive and not self.player.victory:
             self.player_sprite.update()
             self.enemies.update()
         self.clock.tick_busy_loop(FPS)
@@ -224,6 +228,14 @@ class Game:
             screen.blit(self.black_surface, (0, 0))
             screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
                                            WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
+            if self.transparency <= 200:
+                self.transparency += 2
+        elif self.player.victory:
+            self.black_surface.set_alpha(self.transparency)
+            self.victory_image.set_alpha(self.transparency + 50)
+            screen.blit(self.black_surface, (0, 0))
+            screen.blit(self.victory_image, (WIN_SIZE.width // 2 - self.victory_image.get_width() // 2,
+                                           WIN_SIZE.height // 2 - self.victory_image.get_height() // 2))
             if self.transparency <= 200:
                 self.transparency += 2
         pg.display.update()
@@ -491,6 +503,7 @@ class Player(AnimatedSprite):
         self.count = 0
         self.falling_acceleration = 1
         self.is_alive = True
+        self.victory = False
         # sounds
         self.cur_sound = None
         self.running_sound = pg.mixer.Sound(os.path.join('data', 'footstep.ogg'))
@@ -501,6 +514,8 @@ class Player(AnimatedSprite):
         self.climbing_sound.set_volume(0.5)
         self.death_sound = pg.mixer.Sound(os.path.join('data', 'death_sound.mp3'))
         self.death_sound.set_volume(0.5)
+        self.victory_sound = pg.mixer.Sound(os.path.join('data', 'victory_sound.mp3'))
+        self.victory_sound.set_volume(0.55)
         # self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'Fantasy_Game_Background.mp3'))
 
     def die(self):
@@ -562,10 +577,16 @@ class Player(AnimatedSprite):
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
-            Game().is_running = False
-            pg.display.update()
-            change_acting_level(str(int(get_acting_level()) + 1))
-            Game().run()
+            if int(get_acting_level()) == 6:
+                self.victory = True
+                if SOUNDS['background']:
+                    pg.mixer.music.stop()
+                    self.victory_sound.play()
+            else:
+                Game().is_running = False
+                pg.display.update()
+                change_acting_level(str(int(get_acting_level()) + 1))
+                Game().run()
 
         # x speed
         if left == right:
