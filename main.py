@@ -305,10 +305,11 @@ def main_menu():
             view_level = True
         elif button('И Н С Т Р У К Ц И Я', *button_layout_main_menu[1], click):
             view_instruct()
+            main_menu()
 
         elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
             settings_menu()
-            main_menu_setup()
+            main_menu()
         elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click):
             sys.exit()
         if view_level:
@@ -358,7 +359,40 @@ def settings_menu():
 
 
 def view_instruct():
-    pass
+    global SOUNDS
+    screen.fill(WHITE)
+    text_surf, text_rect = text_objects('Инструкция', menu_text)
+    text_rect.center = ((screen_width // 2), (screen_height // 10))
+    screen.blit(text_surf, text_rect)
+    instruction_img = load_image('instruction.png', -1, 490, 200)
+    screen.blit(instruction_img, (10, 100))
+
+    pg.display.update()
+
+    while True:
+        click = False
+        pressed_keys = pg.key.get_pressed()
+        for event in pg.event.get():
+            if event.type == QUIT:
+                sys.exit()
+            elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                return
+            elif event.type == MOUSEBUTTONDOWN:
+                click = True
+        # if toggle_btn('Музыка', *button_layout_main_menu[0], click, enabled=SOUNDS['background'],
+        #               draw_toggle=draw_bg_toggle, blit_text=first_run):
+        #     SOUNDS['background'] = not SOUNDS['background']
+        #     draw_bg_toggle = True
+        # elif toggle_btn('SFX', *button_layout_main_menu[1], click, enabled=SOUNDS['player'],
+        #                 draw_toggle=draw_jump_toggle, blit_text=first_run):
+        #     SOUNDS['player'] = not SOUNDS['player']
+        #     draw_player_toggle = True
+        if button("Н А З А Д", *button_layout_main_menu[3], click):
+            main_menu()
+
+        pg.display.update(button_layout_main_menu)
+        clock.tick(60)
+
 
 
 def menu_level():
