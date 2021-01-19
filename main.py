@@ -78,7 +78,6 @@ def change_level(new_level):
     level = new_level
 
 
-################################
 def crossing_lines(a, b, c, d):
     return a <= c <= b or c <= a <= d
 
@@ -92,7 +91,6 @@ def collided(sprite1, sprite2):
     return pg.sprite.collide_rect(sprite1, sprite2) or collided_rects(sprite1.rect, sprite2.rect)
 
 
-###############################
 def bg_music(name='Fantasy_Game_Background.mp3'):
     fullname = os.path.join('data', name)
     pg.mixer.music.load(fullname)
@@ -122,8 +120,6 @@ class Game:
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
 
-        # Creating objects, loading the level
-
         self.transparency = 0
         self.black_surface = pg.Surface(screen.get_size())
         self.black_surface.fill((0, 0, 0))
@@ -138,10 +134,6 @@ class Game:
 
         if get_acting_level() != "7":
             self.load_level(get_acting_level())
-        # else:
-        #     if SOUNDS['background']:
-        #         pg.mixer.music.stop()
-        #     main_menu()
 
     def load_level(self, level):
         # creating level
@@ -200,8 +192,6 @@ class Game:
                     main_menu()
                 if event.key == K_ESCAPE and not self.player.is_alive:
                     main_menu()
-                    # print('menu')
-                    # self.is_running = False
                 if event.key == K_RETURN and not self.player.is_alive:
                     self.is_running = False
                     Game().run()
@@ -231,7 +221,7 @@ class Game:
             self.victory_image.set_alpha(self.transparency + 50)
             screen.blit(self.black_surface, (0, 0))
             screen.blit(self.victory_image, (WIN_SIZE.width // 2 - self.victory_image.get_width() // 2,
-                                           WIN_SIZE.height // 2 - self.victory_image.get_height() // 2))
+                                             WIN_SIZE.height // 2 - self.victory_image.get_height() // 2))
             if self.transparency <= 200:
                 self.transparency += 2
         pg.display.update()
@@ -275,7 +265,6 @@ def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_to
 def main_menu():
     screen.fill(WHITE)
     text_surf, text_rect = text_objects('Платформы и лестницы', menu_text)
-    # text_surf, text_rect = text_objects('Название игры', menu_text)
     text_rect.center = (int(screen_width / 2), int(screen_height / 4))
     screen.blit(text_surf, text_rect)
     text_surf, text_rect = text_objects(f'v{VERSION}', small_text)
@@ -375,20 +364,11 @@ def view_instruct():
                 return
             elif event.type == MOUSEBUTTONDOWN:
                 click = True
-        # if toggle_btn('Музыка', *button_layout_main_menu[0], click, enabled=SOUNDS['background'],
-        #               draw_toggle=draw_bg_toggle, blit_text=first_run):
-        #     SOUNDS['background'] = not SOUNDS['background']
-        #     draw_bg_toggle = True
-        # elif toggle_btn('SFX', *button_layout_main_menu[1], click, enabled=SOUNDS['player'],
-        #                 draw_toggle=draw_jump_toggle, blit_text=first_run):
-        #     SOUNDS['player'] = not SOUNDS['player']
-        #     draw_player_toggle = True
         if button("Н А З А Д", *button_layout_main_menu[3], click):
             main_menu()
 
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
-
 
 
 def menu_level():
@@ -425,15 +405,12 @@ def menu_level():
 class AnimatedSprite(pg.sprite.Sprite):
     def __init__(self, sheet, columns=7, rows=7, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
-        # self.climb_frames = []
         self.climb_right_frames = []
         self.climb_left_frames = []
-        # self.idle_frames = []
         self.idle_right_frames = []
         self.idle_left_frames = []
         self.run_left_frames = []
         self.run_right_frames = []
-        # self.jump_frames = []
         self.jump_right_frames = []
         self.jump_left_frames = []
         self.cut_sheet(sheet, columns, rows)
@@ -441,7 +418,6 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.image = self.idle_right_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
         self.watching_dir = 'right'
-        # self.watching_right, self.watching_left = True, False
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
@@ -521,7 +497,6 @@ class AnimatedSprite(pg.sprite.Sprite):
 class Player(AnimatedSprite):
     player = None
 
-    # hard_blocks = None
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -535,7 +510,6 @@ class Player(AnimatedSprite):
         self.falling_acceleration = 1
         self.is_alive = True
         self.victory = False
-        # sounds
         self.cur_sound = None
         self.running_sound = pg.mixer.Sound(os.path.join('data', 'footstep.ogg'))
         self.running_sound.set_volume(0.3)
@@ -547,10 +521,8 @@ class Player(AnimatedSprite):
         self.death_sound.set_volume(0.5)
         self.victory_sound = pg.mixer.Sound(os.path.join('data', 'victory_sound.mp3'))
         self.victory_sound.set_volume(0.55)
-        # self.climbing_sound = pg.mixer.Sound(os.path.join('data', 'Fantasy_Game_Background.mp3'))
 
     def die(self):
-        # return 1
         self.is_alive = False
         if SOUNDS['background']:
             pg.mixer.music.stop()
@@ -570,7 +542,6 @@ class Player(AnimatedSprite):
         up = keys[K_w] or keys[K_UP]
         down = keys[K_s] or keys[K_DOWN]
         space = keys[K_SPACE]
-        # state = 'idle'
         speed_y = 0
         speed_x = 0
         directions = {'right': True, 'left': True}
@@ -604,7 +575,8 @@ class Player(AnimatedSprite):
                 state = f'climb_{self.watching_dir}'
         if self.is_climbing[0]:
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
+                1].rect.bottom:
                 self.is_climbing = False, None
         # Colliding with portal
         if pg.sprite.collide_rect(self, Portal.portal):
@@ -650,7 +622,6 @@ class Player(AnimatedSprite):
                 if SOUNDS['player']:
                     self.jump_sound.play()
                     self.cur_sound = self.jump_sound
-                # state = 'jump'
                 state = f'jump_{self.watching_dir}'
         elif not self.is_climbing[0] or (self.is_climbing[0] and self.is_jumping):
             state = f'jump_{self.watching_dir}'
@@ -771,10 +742,6 @@ class Enemy(Player):
             elif self.dir == 'left' and self.rect.left <= self.platform.rect.left:
                 self.change_dir()
             state = f'run_{self.watching_dir}'
-            # if self.dir == 'right':
-            #     state = 'run_right'
-            # else:
-            #     state = 'run_left'
         elif self.movement_type == 'in_range':
             if self.dir == 'right' and self.delta_x + self.speed < self.movement_x:
                 self.rect.x += self.speed
@@ -787,10 +754,6 @@ class Enemy(Player):
             elif self.dir == 'left' and self.delta_x - self.speed <= -self.movement_x:
                 self.change_dir()
             state = f'run_{self.watching_dir}'
-            # if self.dir == 'right':
-            #     state = 'run_right'
-            # else:
-            #     state = 'run_left'
         # Colliding with vertical borders
         if self.rect.x <= thickness:
             self.rect.x = thickness
@@ -843,22 +806,10 @@ class Bullet(pg.sprite.Sprite):
         self.add(self.bullets)
 
 
-class Weapon(pg.sprite.Sprite):
-    all_sprites = None
-
-    def __init__(self, x, y, owner, *args, weapon_type='gun', **kwargs):
-        super().__init__()
-        self.image = load_image('gun.png', -1, w, h)
-        self.rect = self.image.get_rect().move(x, y)
-        self.add(self.all_sprites)
-        self.add(self.bullets)
-
-
 if __name__ == '__main__':
     pg.init()
     screen = window_init()
     screen_width, screen_height = screen.get_size()
-    # print(screen_width)
     BUTTON_WIDTH_START = int(screen_width // 2)
     BUTTON_HEIGHT_START = int(screen_height * 5 // 81)
     button_x_start = (screen_width - BUTTON_WIDTH_START) // 2
