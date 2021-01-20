@@ -6,34 +6,38 @@ import sys
 from pygame import gfxdraw, K_w, K_a, K_d, K_UP, K_LEFT, K_RIGHT, K_ESCAPE, K_F4, K_p, K_RALT, K_LALT, K_SPACE, \
     MOUSEBUTTONDOWN, QUIT, KEYUP, KEYDOWN, K_TAB, K_v, K_h, K_BACKSPACE, K_q, K_m, K_r
 
-#получение действующего уровня
+
+# получение действующего уровня
 def get_acting_level():
-    #Чтение файла с записааным номером уровня
+    # Чтение файла с записааным номером уровня
     with open('levels/level_acting.txt', 'r', encoding="utf-8") as file:
         return file.read()
 
-#смена урвня
+
+# смена урвня
 def change_acting_level(level):
-    #открытие файла для записи нового номера уровня
+    # открытие файла для записи нового номера уровня
     with open('levels/level_acting.txt', 'w') as file:
         file.write(level)
 
-#создание кнопки, функция получает текст, координаты x, y, ширина, высота, а также значение типа bool(нажата ли кнопка или нет)
+
+# создание кнопки, функция получает текст, координаты x, y, ширина, высота, а также значение типа bool(нажата ли кнопка или нет)
 def button(text, x, y, w, h, click, inactive_colour=GREEN, active_colour=LIGHT_GREEN, text_colour=BLACK):
     mouse = pg.mouse.get_pos()
     return_value = False
-    if x < mouse[0] < x + w and y < mouse[1] < y + h: #отрисовка "светлой" кнопки
+    if x < mouse[0] < x + w and y < mouse[1] < y + h:  # отрисовка "светлой" кнопки
         pg.draw.rect(screen, active_colour, (x, y, w, h))
-        if click and pg.time.get_ticks() > 100: return_value = True #возвращение значение True, если кнопка была нажата
+        if click and pg.time.get_ticks() > 100: return_value = True  # возвращение значение True, если кнопка была нажата
     else:
-        pg.draw.rect(screen, inactive_colour, (x, y, w, h))# отрисовка "темной" кнопки
+        pg.draw.rect(screen, inactive_colour, (x, y, w, h))  # отрисовка "темной" кнопки
 
     text_surf, text_rect = text_objects(text, small_text, colour=text_colour)
     text_rect.center = (int(x + w / 2), int(y + h / 2))
-    screen.blit(text_surf, text_rect) #отрисовка текста
+    screen.blit(text_surf, text_rect)  # отрисовка текста
     return return_value
 
-#создание поверхности текста
+
+# создание поверхности текста
 def text_objects(text, font, colour=BLACK):
     text_surface = font.render(text, True, colour)
     return text_surface, text_surface.get_rect()
@@ -259,13 +263,13 @@ class Game:
         pg.quit()
 
 
-#отрисовка круга для кнопки в настройках
+# отрисовка круга для кнопки в настройках
 def draw_circle(surface, x, y, radius, color):
     gfxdraw.aacircle(surface, x, y, radius, color)
     gfxdraw.filled_circle(surface, x, y, radius, color)
 
 
-#создание кнопки в настройках, функция получает текст, координаты, ширину, высоту
+# создание кнопки в настройках, функция получает текст, координаты, ширину, высоту
 def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_toggle=True, blit_text=True,
                enabled_color=LIGHT_GREEN, disabled_color=GREY):
     mouse = pg.mouse.get_pos()
@@ -278,7 +282,7 @@ def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_to
         draw_circle(screen, int(x + TOGGLE_WIDTH), y + h // 4, h // 4, enabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 4, enabled_color)
         draw_circle(screen, int(x + TOGGLE_WIDTH + TOGGLE_ADJ), y + h // 4, h // 5, WHITE)  # внутренний круг
-    #отривка выключенного состояние кнопки
+    # отривка выключенного состояние кнопки
     elif draw_toggle:
         pg.draw.rect(screen, WHITE, (x + TOGGLE_WIDTH - h // 4, y, TOGGLE_ADJ + h, rect_height))
         pg.draw.rect(screen, disabled_color, (x + TOGGLE_WIDTH, y, TOGGLE_ADJ, rect_height))
@@ -291,14 +295,15 @@ def toggle_btn(text, x, y, w, h, click, text_colour=BLACK, enabled=True, draw_to
     screen.blit(text_surf, text_rect)
     return x < mouse[0] < x + w and y < mouse[1] < y + h and click and pg.time.get_ticks() > 100
 
-#создание главного меню
+
+# создание главного меню
 def main_menu():
     screen.fill(WHITE)
-    #отрисовка названия
+    # отрисовка названия
     text_surf, text_rect = text_objects('Платформы и лестницы', menu_text)
     text_rect.center = (int(screen_width / 2), int(screen_height / 4))
     screen.blit(text_surf, text_rect)
-    #отрисовка номера версии
+    # отрисовка номера версии
     text_surf, text_rect = text_objects(f'v{VERSION}', small_text)
     text_rect.center = (int(screen_width * 0.98), int(screen_height * 0.98))
     screen.blit(text_surf, text_rect)
@@ -314,16 +319,16 @@ def main_menu():
                 view_level = True
             elif event.type == MOUSEBUTTONDOWN:
                 click = True
-        #отрисовка кнопок и проверка нажатия(совершен ли клик в области прямоугольника)
+        # отрисовка кнопок и проверка нажатия(совершен ли клик в области прямоугольника)
         if button('Н А Ч А Т Ь  И Г Р У', *button_layout_main_menu[0], click):
             view_level = True
 
         elif button('И Н С Т Р У К Ц И Я', *button_layout_main_menu[1], click):
-            view_instruct()#отрисовка инструкции
+            view_instruct()  # отрисовка инструкции
             main_menu()
 
         elif button('Н А С Т Р О Й К И', *button_layout_main_menu[2], click):
-            settings_menu()#отрисовка меню настроек
+            settings_menu()  # отрисовка меню настроек
             main_menu()
 
         elif button('В Ы Х О Д  И З  И Г Р Ы', *button_layout_main_menu[3], click):
@@ -341,11 +346,12 @@ def main_menu():
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
-#отрисовка меню настройки
+
+# отрисовка меню настройки
 def settings_menu():
     global SOUNDS
     screen.fill(WHITE)
-    text_surf, text_rect = text_objects('Настройки', menu_text)#отрисовка текста
+    text_surf, text_rect = text_objects('Настройки', menu_text)  # отрисовка текста
     text_rect.center = ((screen_width // 2), (screen_height // 4))
     screen.blit(text_surf, text_rect)
     pg.display.update()
@@ -360,21 +366,21 @@ def settings_menu():
                 return
             elif event.type == MOUSEBUTTONDOWN:
                 click = True
-        #проверка нажатий кнопки, а также их отрисовка
+        # проверка нажатий кнопки, а также их отрисовка
         if toggle_btn('Музыка', *button_layout_main_menu[0], click, enabled=SOUNDS['background'],
                       draw_toggle=draw_bg_toggle):
-            #изменение значения ключа в словаре на противоположный
+            # изменение значения ключа в словаре на противоположный
             SOUNDS['background'] = not SOUNDS['background']
             draw_bg_toggle = True
 
         elif toggle_btn('SFX', *button_layout_main_menu[1], click, enabled=SOUNDS['player'],
                         draw_toggle=draw_player_toggle):
-            #изменение значения ключа в словаре на противоположный
+            # изменение значения ключа в словаре на противоположный
             SOUNDS['player'] = not SOUNDS['player']
             draw_player_toggle = True
 
         elif button("Н А З А Д", *button_layout_main_menu[3], click):
-            main_menu()#выход в главное меню
+            main_menu()  # выход в главное меню
 
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
@@ -404,7 +410,8 @@ def view_instruct():
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
-#отрисовка меню выбора уровня
+
+# отрисовка меню выбора уровня
 def menu_level():
     screen.fill(WHITE)
     text_surf, text_rect = text_objects('Уровень', menu_text)
@@ -418,7 +425,7 @@ def menu_level():
                 sys.exit()
             elif event.type == MOUSEBUTTONDOWN:
                 click = True
-        #отрисовка и проверка нажатия кнопки, при нажатие возврадается номер выбранного уровня
+        # отрисовка и проверка нажатия кнопки, при нажатие возврадается номер выбранного уровня
         if button("1", *button_layout_level_menu[0], click):
             return 1
         elif button("2", *button_layout_level_menu[1], click):
@@ -649,8 +656,7 @@ class Player(AnimatedSprite):
         if self.is_climbing[0]:
             # Если игрок слез с лестницы, то он больше не взбирается
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
-                1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
                 self.is_climbing = False, None
         # Пересечение с порталом
         if pg.sprite.collide_rect(self, Portal.portal):
