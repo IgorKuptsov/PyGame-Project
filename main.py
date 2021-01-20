@@ -46,9 +46,7 @@ def window_init():
     MONITOR_SIZE = temp.winfo_screenwidth(), temp.winfo_screenheight()
     temp.destroy()
     del temp
-
     # помещаем окно в центр экрана
-    # это нужно сделать до того, как вы создадите окно
     screen_coords = ((MONITOR_SIZE[0] - WIN_SIZE.w) // 2, (MONITOR_SIZE[1] - WIN_SIZE.h) // 2)
     os.environ['SDL_VIDEO_WINDOW_POS'] = f"{screen_coords[0]}, {screen_coords[1]}"
 
@@ -57,19 +55,26 @@ def window_init():
     return screen
 
 
+# Функция загрузки картинки. Возвращает объект типа pg.Surface
 def load_image(name, color_key=None, w=WIN_SIZE.width, h=WIN_SIZE.height):
+    # Получаем путь до файла
     fullname = os.path.join('data', name)
+    # При неудачной попытке загрузить картинку вызываем исключение
     try:
         image = pg.image.load(fullname).convert()
     except pg.error as message:
         print('Cannot load image:', name)
         raise SystemExit(message)
+    # Если указан color_key == -1, то устанавливаем значение colorkey для плосоксти image
     if color_key is not None:
         if color_key == -1:
             color_key = image.get_at((0, 0))
         image.set_colorkey(color_key)
+    # Оптимизируем плоскость для переноса на текущий экран
+    # ("the new surface will be optimized for blitting to the current display")
     else:
         image = image.convert_alpha()
+    # Масштабируем картинку до размеров w и h
     image = pg.transform.scale(image, (w, h))
     return image
 
@@ -78,26 +83,38 @@ def change_level(new_level):
     level = new_level
 
 
+# Функция получает 4 точки и возвращает значение True,
+# если отрезки AB и CD пересекаются и False, если нет
 def crossing_lines(a, b, c, d):
     return a <= c <= b or c <= a <= d
 
 
+# Функция получает два прямоугольника и возвращает значение True,
+# если они пересекаются и False, если нет
 def collided_rects(rect1, rect2):
     return crossing_lines(rect1.x, rect1.right, rect2.x, rect2.right) and crossing_lines(rect1.y, rect1.bottom, rect2.y,
                                                                                          rect2.bottom)
 
 
+# метод collide_rect не учитвыает тот случай, когда один из отрезков
+# прямоугольников совпадает. Эта функция учитывает и этот случай.
+# Возвращает True, если прямоугольники имеют общие точки и False, если нет
 def collided(sprite1, sprite2):
     return pg.sprite.collide_rect(sprite1, sprite2) or collided_rects(sprite1.rect, sprite2.rect)
 
 
 def bg_music(name='Fantasy_Game_Background.mp3'):
+    # Получаем путь до файла
     fullname = os.path.join('data', name)
+    # Загружаем файл и проигрываем музыку
     pg.mixer.music.load(fullname)
     pg.mixer.music.set_volume(0.12)
+    # fade отвечает за время, в течение которого громкость будет подниматься от 0
+    # до своего значения
     pg.mixer.music.play(-1, fade_ms=1500)
 
 
+# Класс игры
 class Game:
     def __init__(self):
         pg.init()
@@ -105,6 +122,7 @@ class Game:
         self.is_running = True
         self.screen_bg = load_image('bg_test.jpg')
         self.all_sprites = pg.sprite.Group()
+        # Создаём границы
         self.borders_hor = pg.sprite.Group()
         self.borders_vert = pg.sprite.Group()
         self.balls = pg.sprite.Group()
@@ -119,7 +137,7 @@ class Game:
         Border(0, 0,
                thickness, WIN_SIZE.height)
         self.clock = pg.time.Clock()
-
+        # Создаём поверхности, которые используются при победе и смерти
         self.transparency = 0
         self.black_surface = pg.Surface(screen.get_size())
         self.black_surface.fill((0, 0, 0))
@@ -129,9 +147,10 @@ class Game:
         self.victory_image = pg.Surface((350, 200), pg.SRCALPHA)
         self.victory_image.blit(load_image('victory_text.png', -1, 250, 50), (50, 100))
         self.victory_image.blit(load_image('victory.png', -1, 300, 75), (25, 0))
+        # Включаем музыку
         if SOUNDS['background']:
             bg_music()
-
+        # Загружаем уровень
         if get_acting_level() != "7":
             self.load_level(get_acting_level())
 
@@ -199,29 +218,38 @@ class Game:
                     main_menu()
 
     def update(self):
+        # Обновляем игрока и врагов, если игрок жив и не победил
         if self.player.is_alive and not self.player.victory:
             self.player_sprite.update()
             self.enemies.update()
         self.clock.tick_busy_loop(FPS)
 
     def render(self):
+        # Отрисовываем задний фон и все спрайты
         screen.blit(self.screen_bg, (0, 0))
         self.all_sprites.draw(screen)
         self.player_sprite.draw(screen)
+        # Если игрок умер
         if not self.player.is_alive:
+            # Изменяем прозрачность плоскостей
             self.black_surface.set_alpha(self.transparency)
             self.death_image.set_alpha(self.transparency + 50)
+            # Отображем их на экране
             screen.blit(self.black_surface, (0, 0))
             screen.blit(self.death_image, (WIN_SIZE.width // 2 - self.death_image.get_width() // 2,
                                            WIN_SIZE.height // 2 - self.death_image.get_height() // 2))
+            # Увеличиваем прозрачность до 200
             if self.transparency <= 200:
                 self.transparency += 2
         elif self.player.victory:
+            # Изменяем прозрачность плоскостей
             self.black_surface.set_alpha(self.transparency)
             self.victory_image.set_alpha(self.transparency + 50)
+            # Отображем их на экране
             screen.blit(self.black_surface, (0, 0))
             screen.blit(self.victory_image, (WIN_SIZE.width // 2 - self.victory_image.get_width() // 2,
                                              WIN_SIZE.height // 2 - self.victory_image.get_height() // 2))
+            # Увеличиваем прозрачность до 200
             if self.transparency <= 200:
                 self.transparency += 2
         pg.display.update()
@@ -343,30 +371,27 @@ def settings_menu():
         clock.tick(60)
 
 
+# Отображение инструкции
 def view_instruct():
-    global SOUNDS
+    # Заливаем поверхность белым цветом, добавляем текст и картинку
     screen.fill(WHITE)
     text_surf, text_rect = text_objects('Инструкция', menu_text)
     text_rect.center = ((screen_width // 2), (screen_height // 10))
     screen.blit(text_surf, text_rect)
     instruction_img = load_image('instruction.png', -1, 490, 200)
     screen.blit(instruction_img, (10, 100))
-
     pg.display.update()
 
     while True:
         click = False
-        pressed_keys = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == QUIT:
                 sys.exit()
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                return
             elif event.type == MOUSEBUTTONDOWN:
                 click = True
+        # При нажатии на кнопку "Назад", возвращемся в меню
         if button("Н А З А Д", *button_layout_main_menu[3], click):
             main_menu()
-
         pg.display.update(button_layout_main_menu)
         clock.tick(60)
 
@@ -402,9 +427,11 @@ def menu_level():
         clock.tick(60)
 
 
+# Класс анимированного спрайта
 class AnimatedSprite(pg.sprite.Sprite):
     def __init__(self, sheet, columns=7, rows=7, x=thickness, y=WIN_SIZE.height - thickness):
         super().__init__()
+        # Создаём списки картинок
         self.climb_right_frames = []
         self.climb_left_frames = []
         self.idle_right_frames = []
@@ -413,21 +440,35 @@ class AnimatedSprite(pg.sprite.Sprite):
         self.run_right_frames = []
         self.jump_right_frames = []
         self.jump_left_frames = []
+        # Из единой картинки получаем картинки для каждой анимации
+        # и добавляем их в соответсующие списки
         self.cut_sheet(sheet, columns, rows)
+        # Номер кадра в данный момент
         self.cur_frame = 0
         self.image = self.idle_right_frames[self.cur_frame]
         self.rect = self.image.get_rect().move(x, y)
+        # Направление взгляда(используется для укзаания state в методах update
+        # классов Player и Enemy
         self.watching_dir = 'right'
 
     def cut_sheet(self, sheet, columns, rows):
+        # Получаем размер одной картинки
         self.rect = pg.Rect(0, 0, sheet.get_width() // columns,
                             sheet.get_height() // rows)
         # climb_right_frames
+        # Создаём плоскость от sheet по прямоугольнику self.rect
         frame = sheet.subsurface(pg.Rect((0, 0), self.rect.size))
+        # get_bounding_rect() возвращает прямоугольник без пустого фона
+        # это нужно, чтобы во время игры размеры видимой картинки
+        # минимально отличались от rect спрайта
         rect = frame.get_bounding_rect()
+        # Создаём плоскость от frame по прямоугольнику rect
         frame = frame.subsurface(rect)
+        # Масштабируем получвшуюся картинку
         frame = pg.transform.scale(frame, (PLAYER_SIZE, PLAYER_SIZE))
         self.climb_right_frames.append(frame)
+        # Далее проделываем аналогичные действия для каждой анимации,
+        # получая картинки и добавляя их в соответствующий список
         # climb_left_frames
         frame = sheet.subsurface(pg.Rect((self.rect.width, 0), self.rect.size))
         rect = frame.get_bounding_rect()
@@ -484,7 +525,9 @@ class AnimatedSprite(pg.sprite.Sprite):
             self.jump_left_frames.append(frame)
 
     def update(self, state):
+        # Получаем список картинок в зависимости от state
         frames = getattr(self, f'{state}_frames')
+        # Получаем следующую картинку и присваиваем её к изображению
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
 
@@ -596,7 +639,8 @@ class Player(AnimatedSprite):
         if self.is_climbing[0]:
             # Если игрок слез с лестницы, то он больше не взбирается
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
+                1].rect.bottom:
                 self.is_climbing = False, None
         # Пересечение с порталом
         if pg.sprite.collide_rect(self, Portal.portal):
