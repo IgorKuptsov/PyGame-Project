@@ -495,13 +495,9 @@ class AnimatedSprite(pg.sprite.Sprite):
         frames = getattr(self, f'{state}_frames')
         self.cur_frame = (self.cur_frame + 1) % len(frames)
         self.image = frames[self.cur_frame]
-        # this is showing sprite's rect for debugging
-        # rect = pg.Surface(self.rect.size, pg.SRCALPHA)
-        # rect.set_alpha(10)
-        # pg.draw.rect(rect, (255, 0, 0), (0, 0, rect.get_width(), rect.get_height()), 1)
-        # self.image.blit(rect, (0, 0))
 
 
+# Класс игрока
 class Player(AnimatedSprite):
     player = None
 
@@ -512,8 +508,12 @@ class Player(AnimatedSprite):
         self.speed = 7
         self.is_jumping = False
         self.is_climbing = False, None
+        # Кол-во кадров, в которых игрок прыгает после нажатия пробела
         self.jumping_frames = 20
+        # Кол-во кадров, используется для отрисовки
         self.counter = 0
+        # Используется для прыжка
+        # После нажатия пробела с каждым кадром игрок будет меньше подниматься вверх
         self.count = 0
         self.falling_acceleration = 1
         self.is_alive = True
@@ -530,20 +530,25 @@ class Player(AnimatedSprite):
         self.victory_sound = pg.mixer.Sound(os.path.join('data', 'victory_sound.mp3'))
         self.victory_sound.set_volume(0.55)
 
+    # Метод, вызывающийся, когда игрок погиб
     def die(self):
         self.is_alive = False
+        # Воспроизведение звука
         if SOUNDS['background']:
             pg.mixer.music.stop()
             self.death_sound.play()
+        # Если игрок взбирался по лестнице, когда умер, то звук взбирания выключается.
+        # Для бега и прыжка это не нужно делать, так как им соответсвуют короткие
+        # по длительности звуки, а взбиранию по лестнице - длинный
         if SOUNDS['player']:
             self.climbing_sound.stop()
 
     def update(self, *args):
-        # Colliding with enemies
+        # Игрок погибает при любом пересечении с врагами
         if pg.sprite.spritecollideany(self, Enemy.enemies, collided=collided):
             self.die()
             return None
-        # defining keys
+        # Получаем значения, какие клавиши клавиатуры нажаты
         keys = pg.key.get_pressed()
         left = keys[K_a] or keys[K_LEFT]
         right = keys[K_d] or keys[K_RIGHT]
@@ -552,54 +557,71 @@ class Player(AnimatedSprite):
         space = keys[K_SPACE]
         speed_y = 0
         speed_x = 0
+        # Изначально игрок может двигаться в обе стороны
         directions = {'right': True, 'left': True}
+        # Изначально игрок не стоит не платформе
         standing_on_platform = False
+        # Узнаём, стоит ли игрок на границе
         standing_on_border = self.rect.bottom >= Border.bottom.rect.x
+        # Изначально над игроком нет платформы
         platform_above = False
+        # Если нажаты кнопки клавиатуры, отвечающие за движение вправо и влево, игрок поворачивается
         if right:
             self.watching_dir = 'right'
         elif left:
             self.watching_dir = 'left'
+        # state используется для выбора анимации
         state = f'idle_{self.watching_dir}'
-        # Colliding with platforms
+        # Пересечение с платформам
+        # Получаем все платформы, с которыми игрок пересекается
         sprites = pg.sprite.spritecollide(self, Platform.platforms, False, collided=collided)
         for sprite in sprites:
+            # Условие, проверяющее, стоит ли игрок на платформе
             if sprite.rect.y <= self.rect.bottom <= sprite.rect.y + PLATFORM_THICKNESS and not self.is_climbing[0]:
                 standing_on_platform = True
+                # Выравниваем игрока по верхней части платформы
                 self.rect.bottom = sprite.rect.top
+            # Условие, проверяющее, есть ли платформа справа от игрока
             elif sprite.rect.x <= self.rect.right <= sprite.rect.right and not self.is_climbing[0]:
                 directions['right'] = False
+            # Условие, проверяющее, есть ли платформа слева от игрока
             elif sprite.rect.x <= self.rect.left <= sprite.rect.right and not self.is_climbing[0]:
                 directions['left'] = False
+            # Условие, проверяющее, есть ли платформа над игроком
             if (sprite.rect.top <= self.rect.top <= sprite.rect.bottom <= self.rect.bottom) \
                     or (self.rect.top <= sprite.rect.top and self.rect.bottom >= sprite.rect.bottom) \
                     and self.is_jumping:
                 platform_above = True
-        # Colliding with ladders
+        # Пересечение с лестницами
+        # Получаем все лестницы, с которыми игрок пересекается
         sprites = pg.sprite.spritecollide(self, Ladder.ladders, False, collided=collided)
         for sprite in sprites:
+            # Если игрок пересекает лестницу, то он взбирается
             if sprite.rect.x - PLAYER_SIZE <= self.rect.x <= sprite.rect.right:
                 self.is_climbing = True, sprite
                 state = f'climb_{self.watching_dir}'
+        # Если игрок взбирается по лестнице
         if self.is_climbing[0]:
+            # Если игрок слез с лестницы, то он больше не взбирается
             if self.rect.y + PLAYER_SIZE < self.is_climbing[1].rect.y or self.is_climbing[1].rect.right < self.rect.x \
-                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[
-                1].rect.bottom:
+                    or self.rect.x < self.is_climbing[1].rect.x - PLAYER_SIZE or self.rect.top > self.is_climbing[1].rect.bottom:
                 self.is_climbing = False, None
-        # Colliding with portal
+        # Пересечение с порталом
         if pg.sprite.collide_rect(self, Portal.portal):
+            # Если игрок на последнем уровне, то он побеждает
             if int(get_acting_level()) == 6:
                 self.victory = True
                 if SOUNDS['background']:
                     pg.mixer.music.stop()
                     self.victory_sound.play()
+            # Иначе загружается следующий уровень
             else:
                 Game().is_running = False
                 pg.display.update()
                 change_acting_level(str(int(get_acting_level()) + 1))
                 Game().run()
 
-        # x speed
+        # Скорость по оси x
         if left == right:
             speed_x = 0
         elif left and directions['left']:
@@ -613,17 +635,22 @@ class Player(AnimatedSprite):
         elif right:
             state = 'run_right'
         self.rect.x += speed_x
-        # y speed
+        # Скорость по оси y
         if self.is_jumping and not platform_above:
+            # С каждым кадром после нажатия пробела высота, на которую поднимается игрок,
+            # уменьшается на 1
             speed_y -= self.count
             self.count -= 1
             if not self.count:
                 self.is_jumping = False
+        # Прыжок прекращается, если над игроком есть платформа
         elif self.is_jumping and platform_above:
             self.is_jumping = False
+        # Если игрок стоит на границе или платформе, он не падает
         if standing_on_border or standing_on_platform:
             self.falling_acceleration = 1
             self.is_jumping = False
+            # При нажатии пробела осуществляется прыжок
             if space and not self.is_climbing[0]:
                 self.is_jumping = True
                 self.count = self.jumping_frames
@@ -631,41 +658,47 @@ class Player(AnimatedSprite):
                     self.jump_sound.play()
                     self.cur_sound = self.jump_sound
                 state = f'jump_{self.watching_dir}'
+        # Если игрок не на лестнице, он падает.
+        # Но игрок падает, если он на лестницу попал во время прыжка(когда не достиг высшей точки)
         elif not self.is_climbing[0] or (self.is_climbing[0] and self.is_jumping):
             state = f'jump_{self.watching_dir}'
             speed_y += self.falling_acceleration
+            # Ускорение при падении меняется следующим образом: 1, 2, 4, 8
+            # После достижения 8, оно не увеличивается
             if self.falling_acceleration == 1:
                 self.falling_acceleration = 2
             elif self.falling_acceleration < 4:
                 self.falling_acceleration = self.falling_acceleration ** 2
             else:
                 self.falling_acceleration = 8
-
+        # Если игрок на лестнице
         if self.is_climbing[0]:
             if up and down:
                 speed_y = 0
-            # If the player is on the top of the ladder he can not climb up
             elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) >= self.speed:
                 speed_y = -self.speed
+                # Если игрок на верхней точке лестницы, то он не может подняться выше(иначе он поднимется,
+                # а потом сразу упадёт из-за гравитации. Таким образом, игрок бы дёргался на месте
             elif up and abs(self.is_climbing[1].rect.y - (self.rect.y + PLAYER_SIZE)) < self.speed:
                 speed_y = self.is_climbing[1].rect.y - self.rect.y - PLAYER_SIZE
             elif down:
                 speed_y = self.speed
 
         self.rect.y += speed_y
-        # Colliding with vertical borders
+        # Если игрок вдруг "заходит"  за барьеры, то его выталкивает
         if self.rect.x <= thickness:
             self.rect.x = thickness
         elif self.rect.x + PLAYER_SIZE >= WIN_SIZE.width - thickness:
             self.rect.x = WIN_SIZE.width - PLAYER_SIZE - thickness
-        # Colliding with horizontal borders
         if self.rect.y + PLAYER_SIZE >= WIN_SIZE.height:
             self.rect.y = WIN_SIZE.height - PLAYER_SIZE - thickness
         elif self.rect.y <= thickness:
             self.rect.y = thickness
+        # Каждый пятый кадр изменяется картинка для анимации
         if self.counter % 5 == 0:
             super().update(state)
         self.counter += 1
+        # Воспроизведение звуков
         if 'run' in state and self.counter % 5 == 0 and not self.is_climbing[0] and not self.is_jumping:
             if SOUNDS['player']: self.running_sound.play()
         elif 'climb' in state and speed_y and self.cur_sound != self.climbing_sound:
@@ -678,6 +711,7 @@ class Player(AnimatedSprite):
                 self.cur_sound = None
 
 
+# Класс платформы
 class Platform(pg.sprite.Sprite):
     all_sprites = None
     platforms = None
@@ -690,6 +724,7 @@ class Platform(pg.sprite.Sprite):
         self.add(self.platforms)
 
 
+# Класс лестницы
 class Ladder(pg.sprite.Sprite):
     all_sprites = None
     ladders = None
@@ -702,6 +737,7 @@ class Ladder(pg.sprite.Sprite):
         self.add(self.ladders)
 
 
+# Класс портала(выхода)
 class Portal(pg.sprite.Sprite):
     all_sprites = None
     portal = None
